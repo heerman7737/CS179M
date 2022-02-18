@@ -12,31 +12,43 @@ def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
-
-def task1():
-    print('task 1 load offload\n')
-    # input format "on/off , x, y"
-    todo = []
-    userinput = input("input option as: on/off , x, y")
-    todo.append(userinput)
-    while userinput != "confirm":
-        userinput = input("input option as: on/off , x, y")
-        todo.append(userinput)
-    print('running offload algorithm... \n')
-    offload();
-    print('running load algorithm... \n')
-    load();
-
-    
-def offload():
+def offload(todo_off): #1
     print('unload all needed containers first')
+    for i in range(len(todo_off)):
+        print(f'here: {len(todo_off)}')
+
+
     moves.append('unload all needed containers first')
 
 
-def load():
+
+def load(todo_on): #2
     print('load all new containers')
     moves.append('load all new containers')
     
+def task1():
+    print('task 1 load offload\n')
+    # input format "on/off , x, y"
+    todo_off = []
+    todo_on = []
+    userinput = input("input option as: 1/2 , x, y") #1 = off, 2 = on
+
+    while userinput != "confirm":
+        
+        if userinput[0] =='1':
+            todo_off.append(userinput)
+        elif userinput[0] == '2':
+            todo_on.append(userinput)
+        
+        userinput = input("input option as: 1/2 , x, y")
+
+    print('running offload algorithm... \n')
+    offload(todo_off);
+    print('running load algorithm... \n')
+    load(todo_on);
+
+    
+
 
 
 def task2():
@@ -89,9 +101,12 @@ if __name__ == '__main__':
     # col = index % 12
     # row = index // 8
 
+    #global var here
     data = [] # 10x12 ship 2d grid
     buffer = [] # 4x24 buffer zone 2d grid
+    todo = [] # load/offload todo list
     moves = [] # give instruction to operator to move 
+    
     for x in range (8): #store manifest to ship grid 8x12
         row = []
         for y in range (12):
