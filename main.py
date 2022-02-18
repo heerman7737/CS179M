@@ -13,12 +13,60 @@ def print_hi(name):
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
-# Press the green button in the gutter to run the script.
+def task1():
+    print('task 1 load offload\n')
+    # input format "on/off , x, y"
+    todo = []
+    userinput = input("input option as: on/off , x, y")
+    todo.append(userinput)
+    while userinput != "confirm":
+        userinput = input("input option as: on/off , x, y")
+        todo.append(userinput)
+    print('running offload algorithm... \n')
+    offload();
+    print('running load algorithm... \n')
+    load();
+
+    
+def offload():
+    print('unload all needed containers first')
+    moves.append('unload all needed containers first')
+
+
+def load():
+    print('load all new containers')
+    moves.append('load all new containers')
+    
+
+
+def task2():
+    print('task 2 balance\n')
+
+
+
+def menu():
+    choice = int(input("1. Load/offload \n2. Balance\n"))
+    
+    if choice == 1:
+        #print('task 1 load offload\n')
+        task1()
+
+
+    elif choice == 2:
+        #print('task 2 balance\n')
+        task2()
+
+    else : 
+        print('unknown choice, exit')
+
+
+
+
 if __name__ == '__main__':
 
     ship=[]
     # change path below to target manifest location
-    path = r'C:\Users\the\PycharmProjects\pythonProject14\CrisDeBurg.txt'
+    path = r"C:\Users\tongy\Desktop\CS179M\CS179M\manifests\CrisDeBurg.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -35,22 +83,39 @@ if __name__ == '__main__':
 
 
 
-    print(ship[95].name)
-    print(f"size: {len(ship)}\n")
+    #print(ship[95].name)
+    #print(f"size: {len(ship)}\n")
+
     # col = index % 12
     # row = index // 8
 
-    data = []
-    for x in range (8):
+    data = [] # 10x12 ship 2d grid
+    buffer = [] # 4x24 buffer zone 2d grid
+    moves = [] # give instruction to operator to move 
+    for x in range (8): #store manifest to ship grid 8x12
         row = []
         for y in range (12):
             row.append(ship[y + (12*x)])
         data.append(row)
 
-    print( f'x: {len(data)} y: {len(data[0])}')
+    for x in range (9,11): #use ship's row 9,10 as buffer
+        row = []
+        for y in range(12):
+            row.append(container(x,y+1,0,"UNUSED")) 
+        data.append(row)
+
+    for x in range (4): #use ship's row 9,10 as buffer
+        row = []
+        for y in range(24):
+            row.append(container(x+1,y+1,0,"UNUSED"))
+        buffer.append(row)    
+
+    print( f'size: x: {len(data)} y: {len(data[0])}')
 
     for x in range (int(len(data))):
         for y in range (int(len(data[0]))):
-            print(data[x][y].name)
+            print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
 
-    # C:\Users\the\PycharmProjects\pythonProject14\CrisDeBurg.txt
+    menu() #display main menu, input choice
+
+    
