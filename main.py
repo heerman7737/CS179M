@@ -12,7 +12,7 @@ def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
-def offload(todo_off):
+def offload(todo_off): #1
     print('unload all needed containers first')
     for i in range(len(todo_off)):
         print(f'here: {len(todo_off)}')
@@ -22,7 +22,7 @@ def offload(todo_off):
 
 
 
-def load(todo_on):
+def load(todo_on): #2
     print('load all new containers')
     moves.append('load all new containers')
     
