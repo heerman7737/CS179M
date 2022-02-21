@@ -1,5 +1,6 @@
 import csv
 import copy
+from math import dist
 import sys
 import time
 
@@ -316,27 +317,53 @@ def task2():
             goal = data[closest_x][mid+1]
 
 
-def findAvailableSpot(x ,y): #find available spot surrounds current spot, and return coord x, y
-    if data[x][y].name == 'UNUSED': #if spot is available, return
-        return x,y
-    else: # check 8 spots around x y 
-        radius = 1
-        row = x
-        col = y
-        while data[row][col].name != 'UNUSED': # if spot is not available
-            
-            if data[row][col+radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # right spot is available and not mid air
-               
-                # return: available_coord_x, available_coord_y, distance
-                return row,col+radius
-            
-            if data[row][col-radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # left corner is available and not mid air
-                
-                # return: available_coord_x, available_coord_y, distance
-                return row,col-radius
-            #left and right both blocked
-            radius+=1 #make scan radius expand by 3x 
-        
+def findAvailableSpot(x ,y,grid): #find available spot surrounds current spot, and return coord x, y
+    
+    
+    row = x
+    col = y
+    max_row = int(len(grid))
+    max_col = int(len(grid[0]))
+    
+    if(validspot(row,col,grid)): #check current
+        print(f'found: {row} , {col}\n')
+        return row,col
+
+    top_row = row+1 #check top
+    top_col = col
+    if(top_row<=max_row and top_col<=max_col and top_row >=0 and top_col >=0):
+        if(validspot(top_row,top_col,grid)): 
+            return top_row,top_col
+        elif(grid[top_row][top_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(top_row,top_col,grid)
+    
+    bot_row = row-1 #check bot
+    bot_col = col
+    if(bot_row<=max_row and bot_col<=max_col and bot_row >=0 and bot_col >=0):
+        if(validspot(bot_row,bot_col,grid)): 
+            return bot_row,bot_col
+        elif(grid[bot_row][bot_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(bot_row,bot_col,grid)
+    
+    left_row = row #check left
+    left_col = col-1
+    if(left_row<=max_row and left_col<=max_col and left_row >=0 and left_col >=0):
+
+        if(validspot(left_row,left_col,grid)): 
+            return left_row,left_col
+        elif(grid[left_row][left_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(left_row,left_col,grid)
+    
+    right_row = row #check right
+    right_col = col+1
+    if(right_row<=max_row and right_col<=max_col and right_row >=0 and right_col >=0):
+        if(validspot(right_row,right_col,grid)): 
+            return right_row,right_col
+        elif(grid[right_row][right_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(right_row,right_col,grid)
+
+    return 78,90
+   
 def checkside(x,y): # already top layer
     if data[x][y].name == 'UNUSED': #if spot is available, return
         return x,y
@@ -353,8 +380,8 @@ def checkside(x,y): # already top layer
             
             # return: available_coord_x, available_coord_y, distance
             return row,col-radius
-def validspot(row,col): #is available and not mid air
-    if data[row][col].name == 'UNUSED' and data[row-1][col].name !='UNUSED':
+def validspot(row,col,grid): #is available and not mid air
+    if grid[row][col].name == 'UNUSED' and grid[row-1][col].name !='UNUSED':
         return True
 
     return False
@@ -415,7 +442,7 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"/Users/boningli/Downloads/CS179M-main/manifests/CrisDeBurg.txt"
+    path = r"./manifests/CrisDeBurg.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -464,9 +491,11 @@ if __name__ == '__main__':
     for x in range(int(len(data))):
         for y in range(int(len(data[0]))):
             print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
+    d = []
+    d =findAvailableSpot(0 ,6,data)
+    print(f'ffffffcord {d[0]} , {d[1]} \n')
+    #menu()  # display main menu, input choice
 
-    menu()  # display main menu, input choice
-
-    for x in range(int(len(data))):
-        for y in range(int(len(data[0]))):
-            print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
+    # for x in range(int(len(data))):
+    #     for y in range(int(len(data[0]))):
+    #         print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
