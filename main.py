@@ -22,209 +22,209 @@ class container:
 
 
 # return the distance needed for all tiles move back to the right spot
-def manhattanDistance(puzzle, goal):
-    # r, c are row and column number of a tile for goal state puzzle
-    # row col are row and column number of a tile for current puzzle
-    global r, row, c, col
-    distance = 0
+# def manhattanDistance(puzzle, goal):
+#     # r, c are row and column number of a tile for goal state puzzle
+#     # row col are row and column number of a tile for current puzzle
+#     global r, row, c, col
+#     distance = 0
 
-    # 3 for loops
-    # 1st loops through numbers 1-8
-    # 2nd & 3rd loop through the 3x3 puzzle
-    # to compare how much distances difference between puzzle and GOAL
-    for k in range(1, 9):
-        for i in range(len(puzzle)):
-            for j in range(len(puzzle)):
-                if puzzle[i][j] == str(k) and puzzle[i][j] != 0:
-                    row = i
-                    col = j
-                if goal[i][j] == str(k) and goal[i][j] != 0:
-                    r = i
-                    c = j
-        # sum the row and col difference to get the distance
-        distance += abs(r - row) + abs(c - col)
+#     # 3 for loops
+#     # 1st loops through numbers 1-8
+#     # 2nd & 3rd loop through the 3x3 puzzle
+#     # to compare how much distances difference between puzzle and GOAL
+#     for k in range(1, 9):
+#         for i in range(len(puzzle)):
+#             for j in range(len(puzzle)):
+#                 if puzzle[i][j] == str(k) and puzzle[i][j] != 0:
+#                     row = i
+#                     col = j
+#                 if goal[i][j] == str(k) and goal[i][j] != 0:
+#                     r = i
+#                     c = j
+#         # sum the row and col difference to get the distance
+#         distance += abs(r - row) + abs(c - col)
 
-    return distance
-
-
-# This function is from the psuedo-code in slides provided by Prof. Keogh
-def generalSearch(problem):
-    # record the time when generalSearch starts running
-    tstart = time.time()
-    # set the function only to run 1500 seconds
-    t = 1500
-
-    nodesExpnd = 0  # store number of expanded nodes
-    maxQSize = 0  # keep track of the maximum queue size
-    q = []  # queue
-    visited = []  # store puzzle we've already visited
-
-    # make the start node with our puzzle
-    n = Node(problem)
-
-    # put start node into queue
-    q.append(n)
-    maxQSize += 1
-    # put this puzzle into visited list
-    visited.append(n.problem)
-
-    # loop until problem solved
-    while True:
-        # if queue is empty, failure
-        if len(q) == 0:
-            return 'Failure! !'
-
-        # set the current node equal to head of queue
-        # currentnode = Node(q[0].problem)
-        # currentnode.heuristic = q[0].heuristic
-        # currentnode.depth = q[0].depth
-
-        # pop head of queue
-        currentnode = q.pop(0)
-        # nodesExpnd += 1
-
-        # print which node is the best to expand
-        print("Expanding note with g(n) = ", currentnode.depth,
-              ", h(n) = ", currentnode.heuristic, ": \n")
-        currentnode.printPuzzle()
-
-        # sort our queue by lowest h(n) + g(n)
-        # reference: https://thepythonguru.com/python-builtin-functions/sorted/
-        q = sorted(q, key=lambda j: j.cost)
-
-        # check to see if current node is same as our goal state
-        if checkGoal(currentnode.problem):
-            # print all data
-            print("Puzzle solved!!!\n\n" + "Expanded a total of " + str(nodesExpnd) + " nodes.\n" +
-                  "Maximum number of nodes in the queue was " + str(maxQSize) +
-                  ".\nThe solution depth was ", str(currentnode.depth))
-            return 0
-
-        # expand all possible child nodes of the current node
-        expndChildren = generateChildren(currentnode, visited)
-
-        for i in expndChildren:
-            # increment number of expended nodes
-            nodesExpnd += 1
-
-            # set every child node as a temp node
-            tmp = Node(i)
-
-            # increment depth
-            tmp.depth = currentnode.depth + 1
-
-            # set heuristic based on algoChoice
-
-            tmp.heuristic = manhattanDistance(tmp.problem)
-
-            # sum depth and heuristic for cost
-            tmp.cost = tmp.depth + tmp.heuristic
-            # put temp node into queue
-            q.append(tmp)
-            # put temp node puzzle into visited list
-            visited.append(tmp.problem)
-
-            # update max queue size
-            if len(q) > maxQSize:
-                maxQSize = len(q)
-
-            # Exit the system if exceeded runtime
-            if time.time() > tstart + t:
-                print('Exceeded runtime..')
-                sys.exit()
+#     return distance
 
 
-# return node that is expanded to all possible
-def generateChildren(currentNode, visited):
-    # list to store child nodes
-    childrenNode = []
-    global row, col
-    # find current location of zero
-    for i in range(len(currentNode.problem)):
-        for j in range(len(currentNode.problem)):
-            if int(currentNode.problem[i][j]) == 0:
-                row = i
-                col = j
-    # decide where can we move zero to
-    # row not 0, can go up
-    if row != 0:
-        newPuzzle = moveUp(currentNode.problem, row, col)
-        # check if we've visited this puzzle before
-        if newPuzzle not in visited:
-            childrenNode.append(newPuzzle)
+# # This function is from the psuedo-code in slides provided by Prof. Keogh
+# def generalSearch(problem):
+#     # record the time when generalSearch starts running
+#     tstart = time.time()
+#     # set the function only to run 1500 seconds
+#     t = 1500
 
-    # row not 2, can go down
-    if row != (len(currentNode.problem) - 1):
-        newPuzzle = moveDown(currentNode.problem, row, col)
-        # check if we've visited this puzzle before
-        if newPuzzle not in visited:
-            childrenNode.append(newPuzzle)
+#     nodesExpnd = 0  # store number of expanded nodes
+#     maxQSize = 0  # keep track of the maximum queue size
+#     q = []  # queue
+#     visited = []  # store puzzle we've already visited
 
-    # col not 0, can go left
-    if col != 0:
-        newPuzzle = moveLeft(currentNode.problem, row, col)
-        # check if we've visited this puzzle before
-        if newPuzzle not in visited:
-            childrenNode.append(newPuzzle)
+#     # make the start node with our puzzle
+#     n = Node(problem)
 
-    # col not 2, can go right
-    if col != (len(currentNode.problem) - 1):
-        newPuzzle = moveRight(currentNode.problem, row, col)
-        # check if we've visited this puzzle before
-        if newPuzzle not in visited:
-            childrenNode.append(newPuzzle)
+#     # put start node into queue
+#     q.append(n)
+#     maxQSize += 1
+#     # put this puzzle into visited list
+#     visited.append(n.problem)
 
-    return childrenNode
+#     # loop until problem solved
+#     while True:
+#         # if queue is empty, failure
+#         if len(q) == 0:
+#             return 'Failure! !'
+
+#         # set the current node equal to head of queue
+#         # currentnode = Node(q[0].problem)
+#         # currentnode.heuristic = q[0].heuristic
+#         # currentnode.depth = q[0].depth
+
+#         # pop head of queue
+#         currentnode = q.pop(0)
+#         # nodesExpnd += 1
+
+#         # print which node is the best to expand
+#         print("Expanding note with g(n) = ", currentnode.depth,
+#               ", h(n) = ", currentnode.heuristic, ": \n")
+#         currentnode.printPuzzle()
+
+#         # sort our queue by lowest h(n) + g(n)
+#         # reference: https://thepythonguru.com/python-builtin-functions/sorted/
+#         q = sorted(q, key=lambda j: j.cost)
+
+#         # check to see if current node is same as our goal state
+#         if checkGoal(currentnode.problem):
+#             # print all data
+#             print("Puzzle solved!!!\n\n" + "Expanded a total of " + str(nodesExpnd) + " nodes.\n" +
+#                   "Maximum number of nodes in the queue was " + str(maxQSize) +
+#                   ".\nThe solution depth was ", str(currentnode.depth))
+#             return 0
+
+#         # expand all possible child nodes of the current node
+#         expndChildren = generateChildren(currentnode, visited)
+
+#         for i in expndChildren:
+#             # increment number of expended nodes
+#             nodesExpnd += 1
+
+#             # set every child node as a temp node
+#             tmp = Node(i)
+
+#             # increment depth
+#             tmp.depth = currentnode.depth + 1
+
+#             # set heuristic based on algoChoice
+
+#             tmp.heuristic = manhattanDistance(tmp.problem)
+
+#             # sum depth and heuristic for cost
+#             tmp.cost = tmp.depth + tmp.heuristic
+#             # put temp node into queue
+#             q.append(tmp)
+#             # put temp node puzzle into visited list
+#             visited.append(tmp.problem)
+
+#             # update max queue size
+#             if len(q) > maxQSize:
+#                 maxQSize = len(q)
+
+#             # Exit the system if exceeded runtime
+#             if time.time() > tstart + t:
+#                 print('Exceeded runtime..')
+#                 sys.exit()
 
 
-def checkGoal(puzzle, goal):
-    if puzzle == goal:
-        return True
-    return False
+# # return node that is expanded to all possible
+# def generateChildren(currentNode, visited):
+#     # list to store child nodes
+#     childrenNode = []
+#     global row, col
+#     # find current location of zero
+#     for i in range(len(currentNode.problem)):
+#         for j in range(len(currentNode.problem)):
+#             if int(currentNode.problem[i][j]) == 0:
+#                 row = i
+#                 col = j
+#     # decide where can we move zero to
+#     # row not 0, can go up
+#     if row != 0:
+#         newPuzzle = moveUp(currentNode.problem, row, col)
+#         # check if we've visited this puzzle before
+#         if newPuzzle not in visited:
+#             childrenNode.append(newPuzzle)
+
+#     # row not 2, can go down
+#     if row != (len(currentNode.problem) - 1):
+#         newPuzzle = moveDown(currentNode.problem, row, col)
+#         # check if we've visited this puzzle before
+#         if newPuzzle not in visited:
+#             childrenNode.append(newPuzzle)
+
+#     # col not 0, can go left
+#     if col != 0:
+#         newPuzzle = moveLeft(currentNode.problem, row, col)
+#         # check if we've visited this puzzle before
+#         if newPuzzle not in visited:
+#             childrenNode.append(newPuzzle)
+
+#     # col not 2, can go right
+#     if col != (len(currentNode.problem) - 1):
+#         newPuzzle = moveRight(currentNode.problem, row, col)
+#         # check if we've visited this puzzle before
+#         if newPuzzle not in visited:
+#             childrenNode.append(newPuzzle)
+
+#     return childrenNode
 
 
-# return new puzzle that zero has been moved up
-def moveUp(p, row, col):
-    newPuzzle = copy.deepcopy(p)
-
-    temp = newPuzzle[row][col]
-    newPuzzle[row][col] = newPuzzle[row - 1][col]  # moving up
-    newPuzzle[row - 1][col] = temp  # swapping
-
-    return newPuzzle
+# def checkGoal(puzzle, goal):
+#     if puzzle == goal:
+#         return True
+#     return False
 
 
-# return new puzzle that zero has been moved down
-def moveDown(p, row, col):
-    newPuzzle = copy.deepcopy(p)
+# # return new puzzle that zero has been moved up
+# def moveUp(p, row, col):
+#     newPuzzle = copy.deepcopy(p)
 
-    temp = newPuzzle[row][col]
-    newPuzzle[row][col] = newPuzzle[row + 1][col]  # moving up
-    newPuzzle[row + 1][col] = temp  # swapping
+#     temp = newPuzzle[row][col]
+#     newPuzzle[row][col] = newPuzzle[row - 1][col]  # moving up
+#     newPuzzle[row - 1][col] = temp  # swapping
 
-    return newPuzzle
-
-
-# return new puzzle that zero has been moved left
-def moveLeft(p, row, col):
-    newPuzzle = copy.deepcopy(p)
-
-    temp = newPuzzle[row][col]
-    newPuzzle[row][col] = newPuzzle[row][col - 1]  # moving up
-    newPuzzle[row][col - 1] = temp  # swapping
-
-    return newPuzzle
+#     return newPuzzle
 
 
-# return new puzzle that zero has been moved right
-def moveRight(p, row, col):
-    newPuzzle = copy.deepcopy(p)
+# # return new puzzle that zero has been moved down
+# def moveDown(p, row, col):
+#     newPuzzle = copy.deepcopy(p)
 
-    temp = newPuzzle[row][col]
-    newPuzzle[row][col] = newPuzzle[row][col + 1]  # moving up
-    newPuzzle[row][col + 1] = temp  # swapping
+#     temp = newPuzzle[row][col]
+#     newPuzzle[row][col] = newPuzzle[row + 1][col]  # moving up
+#     newPuzzle[row + 1][col] = temp  # swapping
 
-    return newPuzzle
+#     return newPuzzle
+
+
+# # return new puzzle that zero has been moved left
+# def moveLeft(p, row, col):
+#     newPuzzle = copy.deepcopy(p)
+
+#     temp = newPuzzle[row][col]
+#     newPuzzle[row][col] = newPuzzle[row][col - 1]  # moving up
+#     newPuzzle[row][col - 1] = temp  # swapping
+
+#     return newPuzzle
+
+
+# # return new puzzle that zero has been moved right
+# def moveRight(p, row, col):
+#     newPuzzle = copy.deepcopy(p)
+
+#     temp = newPuzzle[row][col]
+#     newPuzzle[row][col] = newPuzzle[row][col + 1]  # moving up
+#     newPuzzle[row][col + 1] = temp  # swapping
+
+#     return newPuzzle
 
 
 def offload(todo_off):  # 1
@@ -259,7 +259,7 @@ def load(todo_on):  # 2
                     cost.append((8-j+1)+(12-k+1))
                     break
             if flag:
-                break
+               break
     print(moves)
 
 
@@ -316,19 +316,50 @@ def task2():
             goal = data[closest_x][mid+1]
 
 
-def findAvailableSpot(x ,y):
+def findAvailableSpot(x ,y): #find available spot surrounds current spot, and return coord x, y
     if data[x][y].name == 'UNUSED': #if spot is available, return
         return x,y
-    else:
-        tmpX = x
-        tmpY = y
-        while data[tmpX][tmpY].name != 'UNUSED': # if spot is not available
-            # check the right hand side spot and the spot under it 
-            if data[tmpX][tmpY+1].name == 'UNUSED' and data[tmpX-1][tmpY+1].name !='UNUSED': 
-                return tmpX,tmpY+1
-            # check the right hand side spot and the spot under it 
-            if data[tmpX-1][tmpY+1].name == 'UNUSED' and data[tmpX-2][tmpY+1].name !='UNUSED':
-                return tmpX,tmpY+1
+    else: # check 8 spots around x y 
+        radius = 1
+        row = x
+        col = y
+        while data[row][col].name != 'UNUSED': # if spot is not available
+            
+            if data[row][col+radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # right spot is available and not mid air
+               
+                # return: available_coord_x, available_coord_y, distance
+                return row,col+radius
+            
+            if data[row][col-radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # left corner is available and not mid air
+                
+                # return: available_coord_x, available_coord_y, distance
+                return row,col-radius
+            #left and right both blocked
+            radius+=1 #make scan radius expand by 3x 
+        
+def checkside(x,y): # already top layer
+    if data[x][y].name == 'UNUSED': #if spot is available, return
+        return x,y
+    else: # check 8 spots around x y 
+        radius = 1
+        row = x
+        col = y
+        if data[row][col+radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # right spot is available and not mid air
+               
+                # return: available_coord_x, available_coord_y, distance
+                return row,col+radius
+            
+        if data[row][col-radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # left corner is available and not mid air
+            
+            # return: available_coord_x, available_coord_y, distance
+            return row,col-radius
+def validspot(row,col): #is available and not mid air
+    if data[row][col].name == 'UNUSED' and data[row-1][col].name !='UNUSED':
+        return True
+
+    return False
+
+            
 
 
 
@@ -439,5 +470,3 @@ if __name__ == '__main__':
     for x in range(int(len(data))):
         for y in range(int(len(data[0]))):
             print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
-
-
