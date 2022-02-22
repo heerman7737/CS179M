@@ -1,5 +1,6 @@
 import csv
 import copy
+from math import dist
 import sys
 import time
 
@@ -15,11 +16,15 @@ class Node:
 
 class container:
     def __init__(self, x, y, w, n):
-        self.coord_x = int(x)
-        self.coord_y = int(y)
+        self.coord_x = int(x) 
+        self.coord_y = int(y)  
         self.weight = int(w)
         self.name = n
+        self.seen = False
 
+# grid = copy(data)
+# balanceleft = copy(data with only left half)
+# findAvailableSpot
 
 # return the distance needed for all tiles move back to the right spot
 # def manhattanDistance(puzzle, goal):
@@ -240,30 +245,33 @@ def offload(todo_off):  # 1
 def load(todo_on):  # 2
     print('load all new containers')
     moves.append('load all new containers')
-    cost = []
+    cost = 0
     flag = False
     for i in range(int(len(todo_on))):
-        for k in range(12):
-            for j in range(int(len(data)-2)):
-                # print("here "+data[0][0].name)
+        u,weight,name = todo_on[i].split()
+        #print(f"todo weight:{weight} name:{name}")
+        row, col ,dist = nearspot(8,-1,data) #virtual pink top left
+        
+        data[row][col].name =name
+        data[row][col].weight =weight
+    #print('===========ship==================')
+    print_ship2()
+    #print(moves)
 
-                if data[j][k].name == ' UNUSED':
-                    flag = True
-                    tmp = todo_on[i].split(',')
-                    n = tmp[1]
-                    w = tmp[2]
-                    # print (n)
-                    data[j][k].name = n
-                    data[j][k].weight = w
-                    moves.append('move '+ n + ' to ['+ str(j+1)+ ', '+str(k+1)+']')
-                    cost.append((8-j+1)+(12-k+1))
-                    break
-            if flag:
-               break
-    print(moves)
-
-
-
+def print_ship2():
+    for asd in data[::-1]:
+        temp = []
+        for y in range (len(asd)):
+            temp.append(asd[y].name[0])
+        print(temp)
+        
+        
+            
+    
+def print_ship():
+    for x in range(int(len(data))):
+        for y in range(int(len(data[0]))):
+            print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
 
 def task1():
     print('task 1 load offload\n')
@@ -271,6 +279,8 @@ def task1():
     todo_off = []
     todo_on = []
     userinput = input("input option as: 1/2 , x, y")  # 1 = off, 2 = on
+    #off x y are coord of box need unload
+    #on: x is weight, y is name
 
     while userinput != "confirm":
 
@@ -284,6 +294,8 @@ def task1():
     print('running offload algorithm... \n')
     offload(todo_off)
     print('running load algorithm... \n')
+    #u,weight,name = todo_on[0].split()
+    #print(f"todo weight:{weight} name:{name}")
     load(todo_on)
 
 
@@ -316,27 +328,59 @@ def task2():
             goal = data[closest_x][mid+1]
 
 
-def findAvailableSpot(x ,y): #find available spot surrounds current spot, and return coord x, y
-    if data[x][y].name == 'UNUSED': #if spot is available, return
-        return x,y
-    else: # check 8 spots around x y 
-        radius = 1
-        row = x
-        col = y
-        while data[row][col].name != 'UNUSED': # if spot is not available
-            
-            if data[row][col+radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # right spot is available and not mid air
-               
-                # return: available_coord_x, available_coord_y, distance
-                return row,col+radius
-            
-            if data[row][col-radius].name == 'UNUSED' and data[row-radius][col+radius].name !='UNUSED': # left corner is available and not mid air
-                
-                # return: available_coord_x, available_coord_y, distance
-                return row,col-radius
-            #left and right both blocked
-            radius+=1 #make scan radius expand by 3x 
-        
+def findAvailableSpot(x ,y,grid,current): #find available spot surrounds current spot, and return coord x, y
+    
+    
+    row = x
+    col = y
+    max_row = int(len(grid))
+    max_col = int(len(grid[0]))
+    #print(f"data: {grid[0][6].name}\n")
+    if(validspot(row,col,grid) and not grid[row][col].seen): #check current is UNUSED and not expanded/visited before
+        grid[row][col].seen = True
+        return row,col
+
+
+    
+    
+    bot_row = row-1 #check bot
+    bot_col = col
+    if(bot_row<=max_row and bot_col<=max_col and bot_row >=0 and bot_col >=0 and not grid[bot_row][bot_col].seen and col!=current):
+        if(validspot(bot_row,bot_col,grid) ): 
+            grid[bot_row][bot_col].seen = True
+            return bot_row,bot_col
+        elif(grid[bot_row][bot_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(bot_row,bot_col,grid)
+    
+    left_row = row #check left
+    left_col = col-1
+    if(left_row<=max_row and left_col<=max_col and left_row >=0 and left_col >=0 and not grid[left_row][left_col].seen):
+
+        if(validspot(left_row,left_col,grid) ): 
+            grid[left_row][left_col].seen = True
+            return left_row,left_col
+        elif(grid[left_row][left_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(left_row,left_col,grid)
+    
+    right_row = row #check right
+    right_col = col+1
+    if(right_row<=max_row and right_col<=max_col and right_row >=0 and right_col >=0 and not grid[right_row][right_col].seen):
+        if(validspot(right_row,right_col,grid) ):
+            grid[right_row][right_col].seen = True 
+            return right_row,right_col
+        elif(grid[right_row][right_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(right_row,right_col,grid)
+
+    top_row = row+1 #check top
+    top_col = col
+    if(top_row<=max_row and top_col<=max_col and top_row >=0 and top_col >=0 and not grid[top_row][top_col].seen):
+        if(validspot(top_row,top_col,grid) ):
+            grid[top_row][top_col].seen = True 
+            return top_row,top_col
+        elif(grid[top_row][top_col].name == 'UNUSED') :# spot can't place container but can expand
+            return findAvailableSpot(top_row,top_col,grid)
+    return 78,90
+   
 def checkside(x,y): # already top layer
     if data[x][y].name == 'UNUSED': #if spot is available, return
         return x,y
@@ -353,22 +397,46 @@ def checkside(x,y): # already top layer
             
             # return: available_coord_x, available_coord_y, distance
             return row,col-radius
-def validspot(row,col): #is available and not mid air
-    if data[row][col].name == 'UNUSED' and data[row-1][col].name !='UNUSED':
+
+
+def AvailableSpot(x,y,grid):
+    spots = []
+
+    for i in range(len(grid[0])): #12
+        for j in range(len(grid)): # 8 or 10
+            if validspot(j,i,grid) and y !=i: #not check self 
+                d = getdistance(x,y,j,i)
+                spots.append ([j,i,d])
+                break
+            else:
+                continue
+    
+    return spots
+
+
+def getdistance(src_x,src_y,des_x,des_y): #h(n) distance from source to destination, ignore blocks in between
+    return abs(src_x-des_x) + abs(src_y-des_y)
+   
+def nearspot(x,y,grid):  #return the x , y ,dist of nearest aviliable spot
+    spots = AvailableSpot(x,y,grid) 
+    #for i in range(len(spots)):
+        #print(f'lit: {spots[i]}')
+    sorted_list = sorted(spots, key=lambda x:x[2])
+    #for i in range(len(spots)):
+        #print(f'litaa: {spots[i]}')
+    #print(f'litaa: {sorted_list[0]}')
+    
+    return sorted_list[0]
+
+
+
+def validspot(row,col,grid): #is available and not mid air
+    if grid[row][col].name == 'UNUSED' and grid[row-1][col].name !='UNUSED':
+        return True
+    if grid[row][col].name == 'UNUSED' and row==0:#is available and already bottom row
         return True
 
     return False
-
-            
-
-
-
-
-
-
-
-
-
 
 
 
@@ -415,17 +483,18 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"/Users/boningli/Downloads/CS179M-main/manifests/CrisDeBurg.txt"
+    path = r"./manifests/CrisDeBurg.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in spamreader:
 
             for v in row[0].split():
-                x = (row[0].split())[0][1:]
+                x = (row[0].split())[0][1:] 
                 y = (row[1].split())[0][:-1]
                 weight = (row[2].split())[0][1:6]
                 name = (",".join(row[3:]))
+                name = name[1:]
                 ship.append(container(x, y, weight, name))
                 # print(f'cord: ( {x}, {y} ) weight: {weight} name: {name} ')
     # print(f'size: x: {len(ship)} y: {len(ship[0])}')
@@ -461,12 +530,26 @@ if __name__ == '__main__':
 
     print(f'size: x: {len(data)} y: {len(data[0])}')
 
-    for x in range(int(len(data))):
-        for y in range(int(len(data[0]))):
-            print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
-
+    # for x in range(int(len(data))):
+    #     for y in range(int(len(data[0]))):
+    #         print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
+    print_ship2()
+    # d = []
+    # indexx=0
+    # indexy=6
+    # #d =findAvailableSpot(indexx ,indexy,data)
+    # spot = nearspot(indexx, indexy,data)
+    
+    # print(f'cord: {spot[0]},{spot[1]} dist: {spot[2]}')
+    # print(f"name: {data[indexx][indexy].name}\n")
+    
+    # temp =data[indexx][indexy]
+    # data[indexx][indexy] = data[d[0]][d[1]]
+    # data[d[0]][d[1]] = data[indexx][indexy]
+    # print(f'manifest_ cord {d[0]+1}, {d[1]+1} \n')
+    
     menu()  # display main menu, input choice
 
-    for x in range(int(len(data))):
-        for y in range(int(len(data[0]))):
-            print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
+    # for x in range(int(len(data))):
+    #     for y in range(int(len(data[0]))):
+    #         print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
