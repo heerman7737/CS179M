@@ -129,7 +129,7 @@ def balance(grid):
     
     else:
         print('Ship is NOT balanced\n')
-
+ 
 
 
 
