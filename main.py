@@ -1,4 +1,5 @@
 from ast import Constant
+from cmath import log10
 import csv
 import copy
 from math import dist
@@ -22,6 +23,7 @@ class container:
         self.weight = int(w)
         self.name = n
         self.seen = False
+        self.target = False
 
 
 
@@ -129,64 +131,55 @@ def balance(grid):
     
     else:
         print('Ship is NOT balanced\n')
+    myboxes = []
+    for row in grid:
+        for box in row:
+            if(box.name !='UNUSED' and box.name != 'NAN'):
+                myboxes.append(box) # append containers to 1d
+    arr1,arr2 = partition(myboxes)
+    choice = chooseSide(arr1,arr2)
+
+    if choice == 1: # arr1 need go left, arr2 need go right
+        goLeft = arr1
+        goRight = arr2
+    else: # choice == 2
+        goLeft = arr2
+        goRight = arr1
+    
+    print(f'goleft:{goLeft}\n goright:{goRight}\n choice: {choice}')
+   # while 
+   # if sum(goLeft.weight) < sum(goRight.weight):
+
+
+
+def chooseSide(arr1,arr2):
+    # arr1 left
+    arr1_to_left = 0
+    arr1_to_right = 0
+    arr2_to_left = 0
+    arr2_to_right = 0
+
+    for x in arr1:
+        if x.coord_y > 6: # is on right
+            arr1_to_left += x.coord_y - 6 # dist to left
+        else: # is on left
+            arr1_to_right += 6 - x.coord_y # dist to right
+    
+    for x in arr2:
+        if x.coord_y > 6:
+            arr2_to_left += x.coord_y - 6
+        else:
+            arr2_to_right += 6 - x.coord_y
+
+    sol_1_left = arr1_to_left + arr2_to_right
+    sol_2_left = arr2_to_left + arr1_to_right
+    if sol_1_left<sol_2_left: 
+        return 1 # first param need to left, second to right
+    else:
+        return 2 # second param need to left, first to right
  
 
 
-
-
-# def findAvailableSpot(x ,y,grid,current): #find available spot surrounds current spot, and return coord x, y
-    
-    
-#     row = x
-#     col = y
-#     max_row = int(len(grid))
-#     max_col = int(len(grid[0]))
-#     #print(f"data: {grid[0][6].name}\n")
-#     if(validspot(row,col,grid) and not grid[row][col].seen): #check current is UNUSED and not expanded/visited before
-#         grid[row][col].seen = True
-#         return row,col
-
-
-    
-    
-#     bot_row = row-1 #check bot
-#     bot_col = col
-#     if(bot_row<=max_row and bot_col<=max_col and bot_row >=0 and bot_col >=0 and not grid[bot_row][bot_col].seen and col!=current):
-#         if(validspot(bot_row,bot_col,grid) ): 
-#             grid[bot_row][bot_col].seen = True
-#             return bot_row,bot_col
-#         elif(grid[bot_row][bot_col].name == 'UNUSED') :# spot can't place container but can expand
-#             return findAvailableSpot(bot_row,bot_col,grid)
-    
-#     left_row = row #check left
-#     left_col = col-1
-#     if(left_row<=max_row and left_col<=max_col and left_row >=0 and left_col >=0 and not grid[left_row][left_col].seen):
-
-#         if(validspot(left_row,left_col,grid) ): 
-#             grid[left_row][left_col].seen = True
-#             return left_row,left_col
-#         elif(grid[left_row][left_col].name == 'UNUSED') :# spot can't place container but can expand
-#             return findAvailableSpot(left_row,left_col,grid)
-    
-#     right_row = row #check right
-#     right_col = col+1
-#     if(right_row<=max_row and right_col<=max_col and right_row >=0 and right_col >=0 and not grid[right_row][right_col].seen):
-#         if(validspot(right_row,right_col,grid) ):
-#             grid[right_row][right_col].seen = True 
-#             return right_row,right_col
-#         elif(grid[right_row][right_col].name == 'UNUSED') :# spot can't place container but can expand
-#             return findAvailableSpot(right_row,right_col,grid)
-
-#     top_row = row+1 #check top
-#     top_col = col
-#     if(top_row<=max_row and top_col<=max_col and top_row >=0 and top_col >=0 and not grid[top_row][top_col].seen):
-#         if(validspot(top_row,top_col,grid) ):
-#             grid[top_row][top_col].seen = True 
-#             return top_row,top_col
-#         elif(grid[top_row][top_col].name == 'UNUSED') :# spot can't place container but can expand
-#             return findAvailableSpot(top_row,top_col,grid)
-#     return 78,90
-   
 def checkside(x,y): # already top layer
     if data[x][y].name == 'UNUSED': #if spot is available, return
         return x,y
@@ -244,7 +237,31 @@ def validspot(row,col,grid): #is available and not mid air
 
     return False
 
+def markBox(grid,names): # mark target boxes
+    for row in grid:# mark target boxes
+        for box in row:
+            if box.name in names: #name matches todo list
+                box.target= True
+    return grid
 
+def partition(arr):
+
+    arr = sorted(arr, key=lambda x:x.weight, reverse=True)
+    sum1 = 0
+    sum2 = 0 
+    l1 =[]
+    l2 =[]
+    for i in range(len(arr)):
+        if sum1 <=sum2:
+            sum1+=arr[i].weight
+            l1.append(arr[i])
+        else:
+            sum2+=arr[i].weight
+            l2.append(arr[i])
+    return l1,l2
+
+
+    
 
 def checkBalance():
 
@@ -284,9 +301,16 @@ def menu():
 if __name__ == '__main__':
 
 
+    # #a = [3044,1100,2020,10000,2011,2007,2000]
+    # a =[9041,10001,500,600,100,10]
+    # n = len(a)
+ 
+    # print(
+    #   "2 sets is ", select(a, 0, sum(a)/2))
+
     ship = []
     # change path below to target manifest location
-    path = r"./manifests/CrisDeBurg.txt"
+    path = r"./manifests/ShipCase2.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -332,11 +356,21 @@ if __name__ == '__main__':
         buffer.append(row)
 
     print(f'size: x: {len(data)} y: {len(data[0])}')
+    print(
+      "2 sets is ")
+    t1, t2 = partition(ship)
 
+    # t1 = 120
+    # t2 = 40,50,35
+    for x in t1:
+        print(f'here: {x.weight}')
+
+    choice = chooseSide(t2,t1)
+    print(f'choice: {choice}')
     # for x in range(int(len(data))):
     #     for y in range(int(len(data[0]))):
     #         print(f'[{data[x][y].coord_x} , {data[x][y].coord_y}] w: {data[x][y].weight} n: {data[x][y].name}')
-    print_ship2()
+    #print_ship2()
     # d = []
     # indexx=0
     # indexy=6
