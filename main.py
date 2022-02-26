@@ -5,6 +5,7 @@ import copy
 from math import dist
 import sys
 import time
+from operator import attrgetter
 
 SHIPGOAL = [9,1]
 BUFFERGOAL = [4,24]
@@ -145,10 +146,135 @@ def balance(grid):
     else: # choice == 2
         goLeft = arr2
         goRight = arr1
+
+    goLeft.sort(key=lambda x: x.weight)
+    goRight.sort(key=lambda x: x.weight)
+
+    # tLeft =[]
+    # tRight =[]
+    # for c in goLeft:
+    #     tLeft.append(c.weight)
+    # for c in goRight:
+    #     tRight.append(c.weight)
+   
+
+    # print(f'goleft: {tLeft}\ngoright: {tRight}\nchoice: {choice}')
+
+    swapable =True # not move min and still within 10%
+    checkLeft = checkRight = True
+    while(swapable):
+
+        totalWeightLeft = sumWeight(goLeft)
+        totalWeightRight = sumWeight(goRight)
+        # print(f'll:{totalWeightLeft} rr: {totalWeightRight}')
+        # tLeft =[]
+        # tRight =[]
+        # for c in goLeft:
+        #     tLeft.append(c.weight)
+        # for c in goRight:
+        #     tRight.append(c.weight)
     
-    print(f'goleft:{goLeft}\n goright:{goRight}\n choice: {choice}')
-   # while 
-   # if sum(goLeft.weight) < sum(goRight.weight):
+
+        #print(f'goleft: {tLeft}\ngoright: {tRight}\nchoice: {choice}')
+        #print( f'{goLeft[0].weight} max {max(goLeft, key=attrgetter("weight")).weight}')
+        if goLeft[0].coord_y > 6 and checkLeft: # if min is in wrong side/ need move
+            
+            if goLeft[0].weight == max(goLeft, key=attrgetter('weight')).weight:
+                checkLeft =False
+                break
+            minLeft = goLeft[0]
+            difference = (abs(totalWeightLeft - totalWeightRight) +(minLeft.weight*2))/(totalWeightLeft + totalWeightRight)
+            if  difference < 0.1:# keep min in right/not move to left still in 10%
+
+                goRight.append(goLeft[0])
+                goLeft.pop(0)
+                goLeft = goLeft[1:] + [goLeft[0]]
+                totalWeightLeft = sumWeight(goLeft)
+                totalWeightRight = sumWeight(goRight)
+                
+            else: # min is already in correct side 
+                print('no check left')
+                checkLeft =False
+        else:
+            goRight = goRight[1:] + [goRight[0]]
+
+
+        if goRight[0].coord_y <= 6 and checkRight : # if min is in wrong side/ need move
+            if goRight[0].weight == max(goRight, key=attrgetter('weight')).weight:
+                checkRight = False
+                break
+
+            minRight = goRight[0]
+            difference = (abs(totalWeightRight - totalWeightLeft) +(minRight.weight*2))/(totalWeightRight + totalWeightLeft)
+            if difference  < 0.1:# keep min in Left/not move to Right still in 10%
+                goLeft.append(goRight[0])
+                goRight.pop(0)
+                goLeft = goLeft[1:] + [goLeft[0]]
+                totalWeightLeft = sumWeight(goLeft)
+                totalWeightRight = sumWeight(goRight)
+            else: # min is already in correct side
+                print('no check right')
+                checkRight = False
+        else:
+            goRight = goRight[1:] + [goRight[0]]
+            
+        if not checkLeft and not checkRight:
+            swapable = False
+
+    tempGoLeft = []
+    for box in goLeft:
+        if box.coord_y > 6: # is in wrong side
+            tempGoLeft.append(box)
+    tempGoLeft, goLeft = goLeft, tempGoLeft #swap
+    tempGoLeft.clear()
+
+    tempGoRight = []
+    for box in goRight:
+        if box.coord_y <= 6: # is in wrong side
+            tempGoRight.append(box)
+    tempGoRight, goRight = goRight, tempGoRight #swap
+    tempGoRight.clear()
+
+
+    tLeft =[]
+    tRight =[]
+    for c in goLeft:
+        tLeft.append(c.weight)
+    for c in goRight:
+        tRight.append(c.weight)
+    print(f'goleft: {tLeft}\ngoright: {tRight}\nchoice: {choice}')
+
+    needmove = []
+    needmove.append(goLeft)
+    needmove.append(goRight)
+    moveBoxes(needmove)
+        
+        
+def moveBoxes(arr):
+
+    #while len(arr)>0: # pop after move
+    print("need write this ")
+
+
+
+def findBox(grid,arr):
+    names= []
+    names.append(box.name for box in arr)
+    for row in grid[::-1]: # top row first
+        for box in range (len(row)):
+            if box.name in names:
+                return box
+
+    
+
+    
+def sumWeight(arr):
+    total = 0
+    for c in arr:
+        #if c.coord_y > 6:
+        total += c.weight
+    return total
+
 
 
 
@@ -292,7 +418,7 @@ def menu():
 
     elif choice == 2:
         # print('task 2 balance\n')
-        task2()
+        balance(data)
 
     else:
         print('unknown choice, exit')
@@ -310,7 +436,7 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"./manifests/ShipCase2.txt"
+    path = r"./manifests/ShipCase5.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
