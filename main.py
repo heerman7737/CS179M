@@ -7,7 +7,8 @@ from math import dist
 import sys
 import time
 from operator import attrgetter
-
+from tkinter import *
+from main import*
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
 MID_LINE = 5
@@ -470,6 +471,15 @@ def AvailableSpot(x,y,grid):
     
     return spots
 
+def getGrid():
+    arr =[]
+    for i in range(8):
+        col=[]
+        for j in range(12):
+            col.append(data[i][j].name)
+        arr.append(col)
+    print(arr)
+    return data
 
 def getdistance(src_x,src_y,des_x,des_y): #h(n) distance from source to destination, ignore blocks in between
     return abs(src_x-des_x) + abs(src_y-des_y)
@@ -561,6 +571,14 @@ def menu():
         print('unknown choice, exit')
 
 
+
+def creategrid():
+    
+    for i in reversed(range(8)):
+        for j in range(12):
+            n = data[i][j].name
+            Button(frame, text=n,height= 3, width=6).grid(row=i, column=j,ipadx=3, ipady=3)
+            
 if __name__ == '__main__':
 
 
@@ -671,6 +689,19 @@ if __name__ == '__main__':
             f.write(f"[{str(box.rowNum+1).zfill(2)},{str(box.colNum+1).zfill(2)}], {{{s}}}, {box.name}\n")
             
     f.close()
+    ws = Tk()
+    ws.title('PythonGuides')
+    ws.geometry('1200x900')
+    ws.config(bg='#F2B33D')
+
+    frame = Frame(ws, bg='#F2B33D')
+    creategrid()
+    frame.pack(expand=True) 
+
+    ws.mainloop()
+
+
+    
     # for x in range(int(len(data))):
     #     for y in range(int(len(data[0]))):
     #         print(f'[{data[x][y].rowNum} , {data[x][y].colNum}] w: {data[x][y].weight} n: {data[x][y].name}')
