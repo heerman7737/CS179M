@@ -473,13 +473,13 @@ def AvailableSpot(x,y,grid):
 
 def getGrid():
     arr =[]
-    for i in range(8):
+    for i in range(7,-1,-1):
         col=[]
         for j in range(12):
             col.append(data[i][j].name)
         arr.append(col)
     print(arr)
-    return data
+    return arr
 
 def getdistance(src_x,src_y,des_x,des_y): #h(n) distance from source to destination, ignore blocks in between
     return abs(src_x-des_x) + abs(src_y-des_y)
@@ -573,10 +573,10 @@ def menu():
 
 
 def creategrid():
-    
-    for i in reversed(range(8)):
+    arr = getGrid()
+    for i in range(8):
         for j in range(12):
-            n = data[i][j].name
+            n = arr[i][j]
             Button(frame, text=n,height= 3, width=6).grid(row=i, column=j,ipadx=3, ipady=3)
             
 if __name__ == '__main__':
@@ -695,6 +695,7 @@ if __name__ == '__main__':
     ws.config(bg='#F2B33D')
 
     frame = Frame(ws, bg='#F2B33D')
+    #getGrid()
     creategrid()
     frame.pack(expand=True) 
 
