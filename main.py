@@ -2,6 +2,7 @@ from ast import Constant
 from cmath import log10
 import csv
 import copy
+from glob import escape
 from math import dist
 import sys
 import time
@@ -10,6 +11,7 @@ from operator import attrgetter
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
 MID_LINE = 5
+
 class Node:
     def __init__(self, p):
         self.problem = p
@@ -30,9 +32,32 @@ class container:
 
 def offload(todo_off):  # 1
     print('unload all needed containers first')
-    for i in range(len(todo_off)):
-        print(f'here: {len(todo_off)}')
+    BoxToOffload =[]
+    for i in range(len(todo_off)): # parse input and link box in data
+        #print(f'here: {len(todo_off)}')
+        option,row,col = todo_off[i].split()
+        #print(f'unload todo:{row}, {col}')
+        BoxToOffload.append(data[int(row)-1][int(col)-1]) # input matches manifest
 
+    while(len(BoxToOffload) > 0): #pop after unload
+        needMove = findBox(data,BoxToOffload) #find target box near top and stuff on top
+        
+        if len(needMove)<=0:
+            print('unload box index <=0')
+        mytarget = needMove[len(needMove)-1]
+        
+        for box in needMove: #box in arr + others on top
+            if box.target == True:# is my target, unload to pink
+                box.weight=0
+                box.name = 'UNUSED'
+                mysequence.append(f'Offload: [{box.rowNum+1},{box.colNum+1} to [9,1](pink)')
+            else: #not target, move to elsewhere
+                row, col ,dist = nearspot(box.rowNum, box.colNum,data)
+                swapData(box.rowNum,box.colNum,row,col,data)
+                mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
+
+        BoxToOffload.remove(mytarget)
+                
     mysequence.append('unload all needed containers first')
 
 
@@ -51,6 +76,8 @@ def load(todo_on):  # 2
         
         data[row][col].name =name
         data[row][col].weight =weight
+        mysequence.append(f'Onload: {name} to [{row+1},{col+1}]')
+        
     #print('===========ship==================')
     print_ship2(data)
     
@@ -279,11 +306,10 @@ def BalanceBoxes(arr):
                     tempGrid = [row[MID_LINE-1:] for row in data] # index 0-5
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,-1,tempGrid)
-                    row#+=1
                     col +=MID_LINE+1 # offset for sliced grid
                     print(f'right to right: {box.name} coord: {box.rowNum} , {box.colNum}')
                     print(f'near: {row} , {col}')
-                    #mysequence.append("balance: ")
+                    mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
                     print_ship2(data)
 
@@ -292,10 +318,9 @@ def BalanceBoxes(arr):
                     tempGrid = [row[:MID_LINE+1] for row in data]
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,box.colNum,tempGrid)
-                    row 
-                    col # offset for sliced grid
                     print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                     print(f'near: {row} , {col} dist:{dist}')
+                    mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
                     print_ship2(data)
             else:# is target box
@@ -303,11 +328,11 @@ def BalanceBoxes(arr):
                     tempGrid = [row[MID_LINE+1:] for row in data] # index for right
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,-1,tempGrid)
-                    row 
                     col +=MID_LINE+1 # offset for sliced grid
                     #mysequence.append("balance: ")
                     print(f'left to right: {box.name} coord: {box.rowNum} , {box.colNum}')
-                    print(f'near: {row} , {col}')
+                    print(f'near: {row} , {col} dist:{dist}')
+                    mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
                     print_ship2(data)
 
@@ -316,10 +341,9 @@ def BalanceBoxes(arr):
                     
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,box.colNum,tempGrid)
-                    row 
-                    col #box.colNum # offset for sliced grid
                     print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                     print(f'near: {row} , {col}')
+                    mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
                     print_ship2(data)
         targetBoxes.remove(mytarget)
@@ -459,7 +483,13 @@ def nearspot(x,y,grid):  #return the x , y ,dist of nearest aviliable spot
     #for i in range(len(spots)):
         #print(f'litaa: {spots[i]}')
     #print(f'litaa: {sorted_list[0]}')
+    #print(f'aaaaaaaaaaaaaaaa {int(copy(sorted_list[0][2]))}')
     
+    if y ==-1:
+       sorted_list[0][2] +=1
+    global estimatedTime
+    estimatedTime += int(sorted_list[0][2])
+    print(f'time: {estimatedTime}')
     return sorted_list[0]
 
 
@@ -495,8 +525,6 @@ def partition(arr):
             l2.append(arr[i])
     return l1,l2
 
-
-    
 
 def checkBalance():
 
@@ -545,7 +573,7 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"./manifests/ShipCase1.txt"
+    path = r"./manifests/ShipCase4.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -571,6 +599,11 @@ if __name__ == '__main__':
     buffer = []  # 4x24 buffer zone 2d grid
     todo = []  # load/offload todo list
     mysequence = []  # give instruction to operator to move
+    
+    estimatedTime = 0
+    crane_x = 9
+    crane_y = 1
+    
     
 
     for x in range(8):  # store manifest to ship grid 8x12
@@ -624,9 +657,20 @@ if __name__ == '__main__':
     #tempGrid = data[:-2]
     #tr,tc,d = nearspot(8,-1,tempGrid)
     #print(f'near: {tr} , {tc} dist:{d}')
-    #print_ship2(tempGrid)
+    print_ship2(data)
     menu()  # display main menu, input choice
+    print('moving sequence:\n')
+    print(mysequence)
+    print(f'estimated time: {estimatedTime}')
 
+
+    f = open("demofile2.txt", "w")
+    for row in data[:-2]:
+        for box in row:
+            s = str(box.weight).zfill(5)
+            f.write(f"[{str(box.rowNum+1).zfill(2)},{str(box.colNum+1).zfill(2)}], {{{s}}}, {box.name}\n")
+            
+    f.close()
     # for x in range(int(len(data))):
     #     for y in range(int(len(data[0]))):
     #         print(f'[{data[x][y].rowNum} , {data[x][y].colNum}] w: {data[x][y].weight} n: {data[x][y].name}')
