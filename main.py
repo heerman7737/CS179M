@@ -577,7 +577,14 @@ def creategrid():
     for i in range(8):
         for j in range(12):
             n = arr[i][j]
-            Button(frame, text=n,height= 3, width=6).grid(row=i, column=j,ipadx=3, ipady=3)
+            if(n=='NAN'):
+                Button(frame, text=n,height= 3, width=6,bg='black',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+            elif(n=='UNUSED'):
+                Button(frame, text=n,height= 3, width=6,bg='white',fg='black').grid(row=i, column=j,ipadx=3, ipady=3)
+            else:
+                Button(frame, text=n,height= 3, width=6,bg='blue',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+
+
             
 if __name__ == '__main__':
 
