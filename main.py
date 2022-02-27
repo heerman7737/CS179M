@@ -572,7 +572,7 @@ def menu():
 
 
 
-def creategrid():
+def creategrid(frame):
     arr = getGrid()
     for i in range(8):
         for j in range(12):
@@ -701,9 +701,28 @@ if __name__ == '__main__':
     ws.geometry('1200x900')
     ws.config(bg='#F2B33D')
 
-    frame = Frame(ws, bg='#F2B33D')
+    frame1 = Frame(ws)
+    frame1.pack(side=TOP, fill=X)
+
+    frame3 = Frame(ws)
+    frame3.pack(side=BOTTOM, fill=X, pady=5)
+
+    frame2 = Frame(ws)
+    frame2.pack(side=LEFT, fill=Y, padx=10, pady=10)
+
+    frame = Frame(ws) # parent of frame4 and frame5
+    frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
+# make frame4 and frame5 use all the space
+    frame.grid_columnconfigure(0, weight=1)
+    frame.grid_rowconfigure(0, weight=1)
+    frame.grid_rowconfigure(1, weight=1)
+    frame4 = Frame(frame, bd=1, relief='solid')
+    frame4.grid(sticky='nsew', padx=5, pady=5)
+
+    frame4 = Frame(frame, bd=1, relief='solid')
+    frame4.grid(sticky='nsew', padx=5, pady=5)
     #getGrid()
-    creategrid()
+    creategrid(frame2)
     frame.pack(expand=True) 
 
     ws.mainloop()

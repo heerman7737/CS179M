@@ -1,34 +1,83 @@
+import tkinter as tk
 from tkinter import *
-from main import*
-ws = Tk()
-ws.title('PythonGuides')
-ws.geometry('1200x900')
-ws.config(bg='#F2B33D')
+from tkinter import messagebox
+import random
 
-frame = Frame(ws, bg='#F2B33D')
+root = Tk()
+linear_array = [i for i in range(1,26)]
+random_array = []
+removed_numbers=[]
+number_to_send = None
+num_to_recv = None
 
+#Creating Frames
+frame1 = Frame(root)
+frame1.pack(side=TOP, fill=X)
 
-Button(frame, text="7").grid(row=8, column=12,ipadx=3, ipady=3)
-Button(frame, text="6").grid(row=7, column=12,ipadx=3, ipady=3)
-Button(frame, text="5").grid(row=6, column=12,ipadx=3, ipady=3)
-Button(frame, text="4").grid(row=5, column=12,ipadx=3, ipady=3)
-Button(frame, text="3").grid(row=4, column=12,ipadx=3, ipady=3)
-Button(frame, text="2").grid(row=3, column=12,ipadx=3, ipady=3)
+frame3 = Frame(root)
+frame3.pack(side=BOTTOM, fill=X, pady=5)
 
-Button(frame, text="7").grid(row=8, column=11,ipadx=3, ipady=3)
-Button(frame, text="6").grid(row=7, column=10,ipadx=3, ipady=3)
-Button(frame, text="5").grid(row=6, column=9,ipadx=3, ipady=3)
-Button(frame, text="4").grid(row=5, column=8,ipadx=3, ipady=3)
-Button(frame, text="3").grid(row=4, column=7,ipadx=3, ipady=3)
-Button(frame, text="2").grid(row=3, column=6,ipadx=3, ipady=3)
+frame2 = Frame(root)
+frame2.pack(side=LEFT, fill=Y, padx=10, pady=10)
 
-def creategrid():
-    w =12
-    h =8
-    for i in range(h):
-        for j in range(w):
-            Button(frame, text="7").grid(row=i, column=j,ipadx=3, ipady=3)
-#creategrid()
-frame.pack(expand=True) 
+frame = Frame(root) # parent of frame4 and frame5
+frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
+# make frame4 and frame5 use all the space
+frame.grid_columnconfigure(0, weight=1)
+frame.grid_rowconfigure(0, weight=1)
+frame.grid_rowconfigure(1, weight=1)
+frame4 = Frame(frame, bd=1, relief='solid')
+frame4.grid(sticky='nsew', padx=5, pady=5)
 
-ws.mainloop()
+frame4 = Frame(frame, bd=1, relief='solid')
+frame4.grid(sticky='nsew', padx=5, pady=5)
+#Button click function
+def numberClick(num,btn):
+    global number_to_send
+    #messagebox.showinfo('Message',str(num)+' is removed')
+    number_to_send = num
+    removed_numbers.append(num)
+    btn.configure(text='X')
+    btn.configure(bg='red',fg='white')
+    btn.configure(state="disabled")
+    print(removed_numbers)
+    stmnt = str(num)+" was removed!!"
+    textBox.delete('1.0', END)
+    textBox.insert(END,stmnt)
+    textBox.tag_add("center", 1.0, "end")
+
+#Generating linear array and a random array from the linear array
+for i in range(1,26):
+    temp = random.choice(linear_array)
+    linear_array.remove(temp)
+    random_array.append(temp) 
+
+#Generating Title bar
+title = Label(frame1,text='B . I . N . G . O !!!',fg='red',bg='yellow')
+title.config(font=("Courier", 30))
+title.pack(side=TOP,fill=X)
+
+#Generating a 5x5 Button matrix
+rows=5
+columns=5
+btns = [[None for i in range(rows)] for j in range(columns)]
+button_mapping = {}
+for i in range(rows):
+    for j in range(columns):
+        num = random.choice(random_array)
+        random_array.remove(num)
+        btns[i][j]=Button(frame2, text = num , fg ='red',height = 3, width = 5)
+        btns[i][j]['command']=lambda btn=btns[i][j],num=num: numberClick(num,btn)
+        btns[i][j]['borderwidth'] = 2
+        btns[i][j]['relief'] = "groove"
+        btns[i][j].grid(row=i,column=j)
+        button_mapping[num]=btns[i][j]
+
+#Printing numbers which are deleted 
+textBox = Text(frame3, height = 1, width = 28)
+textBox.tag_configure("center", justify='center')
+textBox.insert("1.0","Recently Deleted Number")
+textBox.tag_add("center", 1.0, "end")
+textBox.pack(side=TOP)
+   
+root.mainloop()
