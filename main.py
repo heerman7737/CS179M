@@ -7,7 +7,8 @@ from math import dist
 import sys
 import time
 from operator import attrgetter
-
+from tkinter import *
+from main import*
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
 MID_LINE = 5
@@ -89,6 +90,7 @@ def print_ship2(grid):
         for y in range (len(asd)):
             temp.append(asd[y].name[0])
         print(temp)
+    print('\n')
         
         
             
@@ -285,7 +287,7 @@ def balance(grid):
         
         
 def BalanceBoxes(arr):
-
+    
     targetBoxes = arr
     while len( targetBoxes)>0: # pop after move
         print("need write this ")
@@ -312,6 +314,8 @@ def BalanceBoxes(arr):
                     print(f'near: {row} , {col}')
                     mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
                     print_ship2(data)
 
 
@@ -324,6 +328,8 @@ def BalanceBoxes(arr):
                     print(f'near: {row} , {col} dist:{dist}')
                     mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
                     print_ship2(data)
             else:# is target box
                 if box.colNum <= MID_LINE: # it's on left
@@ -337,6 +343,8 @@ def BalanceBoxes(arr):
                     print(f'near: {row} , {col} dist:{dist}')
                     mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
                     print_ship2(data)
 
                 else:#its on right
@@ -348,6 +356,8 @@ def BalanceBoxes(arr):
                     print(f'near: {row} , {col}')
                     mysequence.append(f'Move: [{box.rowNum+1},{box.colNum+1}] to [{row+1},{col+1}]')
                     swapData(box.rowNum,box.colNum,row,col,data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
                     print_ship2(data)
         targetBoxes.remove(mytarget)
 
@@ -476,20 +486,13 @@ def AvailableSpot(x,y,grid):
     return spots
 
 
+
 def getdistance(src_x,src_y,des_x,des_y): #h(n) distance from source to destination, ignore blocks in between
     return abs(src_x-des_x) + abs(src_y-des_y)
    
 def nearspot(x,y,grid):  #return the x , y ,dist of nearest aviliable spot
     spots = AvailableSpot(x,y,grid) 
-    
-    #for i in range(len(spots)):
-        #print(f'lit: {spots[i]}')
     sorted_list = sorted(spots, key=lambda x:x[2])
-    #for i in range(len(spots)):
-        #print(f'litaa: {spots[i]}')
-    #print(f'litaa: {sorted_list[0]}')
-    #print(f'aaaaaaaaaaaaaaaa {int(copy(sorted_list[0][2]))}')
-    
     if y ==-1:
        sorted_list[0][2] +=1
     global estimatedTime
@@ -566,6 +569,50 @@ def menu():
         print('unknown choice, exit')
 
 
+def getGrid(r):
+    arr =[]
+    for i in range(9,-1,-1):
+        col=[]
+        for j in range(12):
+            col.append(states[r][i][j].name)
+        arr.append(col)
+    print(arr)
+    return arr
+
+def creategrid(r):
+    
+    arr = getGrid(r)
+    
+    for i in range(10):
+        for j in range(12):
+            n = arr[i][j]
+            if(n=='NAN'):
+                Button(frame2, text = n,height= 3, width=6,bg='black',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+            elif(n=='UNUSED'):
+                Button(frame2, text = n,height= 3, width=6,bg='white',fg='black').grid(row=i, column=j,ipadx=3, ipady=3)
+            else:
+                Button(frame2, text = n,height= 3, width=6,bg='blue',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+    for i in range(8):
+        for j in range(12):
+            n = arr[i][j]
+            if(n=='NAN'):
+                Button(frame2, text = n,height= 3, width=6,bg='black',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+            elif(n=='UNUSED'):
+                Button(frame2, text = n,height= 3, width=6,bg='white',fg='black').grid(row=i, column=j,ipadx=3, ipady=3)
+            else:
+                Button(frame2, text = n,height= 3, width=6,bg='blue',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)    
+    
+def counter():
+    global step
+    global frame2
+    global frame1
+    if(len(states)-1 ==step):
+        label =Message( frame1, text="Fuck")
+        label.pack()
+    else:
+        step= step+1
+    creategrid(step)
+            
 if __name__ == '__main__':
 
 
@@ -604,7 +651,8 @@ if __name__ == '__main__':
     buffer = []  # 4x24 buffer zone 2d grid
     todo = []  # load/offload todo list
     mysequence = []  # give instruction to operator to move
-    
+    states = []
+    step = 0
     estimatedTime = 0
     crane_x = 9
     crane_y = 1
@@ -622,7 +670,8 @@ if __name__ == '__main__':
         for y in range(12):
             row.append(container(x, y + 1, 0, "UNUSED"))
         data.append(row)
-
+    inital = copy.deepcopy(data)
+    states.append(inital)
     for x in range(4):  # use ship's row 9,10 as buffer
         row = []
         for y in range(24):
@@ -667,7 +716,9 @@ if __name__ == '__main__':
     print('moving sequence:\n')
     print(mysequence)
     print(f'estimated time: {estimatedTime}')
-
+    
+    #for i in range(len(states)):
+    #    print_ship2(states[i])
 
     f = open("demofile2.txt", "w")
     for row in data[:-2]:
@@ -676,6 +727,37 @@ if __name__ == '__main__':
             f.write(f"[{str(box.rowNum+1).zfill(2)},{str(box.colNum+1).zfill(2)}], {{{s}}}, {box.name}\n")
             
     f.close()
+    ws = Tk()
+    ws.title('PythonGuides')
+    ws.geometry('1200x900')
+    ws.config(bg='#F2B33D')
+
+    frame1 = Frame(ws)
+    frame1.pack(side=TOP, fill=X)
+
+    frame3 = Frame(ws)
+    frame3.pack(side=BOTTOM, fill=X, pady=5)
+
+    frame2 = Frame(ws)
+    frame2.pack(side=LEFT, fill=Y, padx=10, pady=10)
+
+    frame = Frame(ws) # parent of frame4 and frame5
+    frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
+    frame.grid_columnconfigure(0, weight=1)
+    frame.grid_rowconfigure(0, weight=1)
+    frame.grid_rowconfigure(1, weight=1)
+    frame4 = Frame(frame, bd=1, relief='solid')
+    frame4.grid(sticky='nsew', padx=5, pady=5)
+
+    frame4 = Frame(frame, bd=1, relief='solid')
+    frame4.grid(sticky='nsew', padx=5, pady=5)
+    Button(frame4, text="Next",height= 3, width=6,bg='white',fg='black',command=counter).grid(row=1, column=1,ipadx=3, ipady=3)
+    creategrid(0)
+    frame.pack(expand=True) 
+    ws.mainloop()
+
+
+    
     # for x in range(int(len(data))):
     #     for y in range(int(len(data[0]))):
     #         print(f'[{data[x][y].rowNum} , {data[x][y].colNum}] w: {data[x][y].weight} n: {data[x][y].name}')
