@@ -566,7 +566,7 @@ def menu():
 
 def getGrid(r):
     arr =[]
-    for i in range(7,-1,-1):
+    for i in range(9,-1,-1):
         col=[]
         for j in range(12):
             col.append(states[r][i][j].name)
@@ -574,24 +574,39 @@ def getGrid(r):
     print(arr)
     return arr
 
-def creategrid(frame,r):
+def creategrid(r):
     
     arr = getGrid(r)
     
+    for i in range(10):
+        for j in range(12):
+            n = arr[i][j]
+            if(n=='NAN'):
+                Button(frame2, text = n,height= 3, width=6,bg='black',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+            elif(n=='UNUSED'):
+                Button(frame2, text = n,height= 3, width=6,bg='white',fg='black').grid(row=i, column=j,ipadx=3, ipady=3)
+            else:
+                Button(frame2, text = n,height= 3, width=6,bg='blue',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
     for i in range(8):
         for j in range(12):
             n = arr[i][j]
             if(n=='NAN'):
-                Button(frame, text = n,height= 3, width=6,bg='black',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+                Button(frame2, text = n,height= 3, width=6,bg='black',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
             elif(n=='UNUSED'):
-                Button(frame, text = n,height= 3, width=6,bg='white',fg='black').grid(row=i, column=j,ipadx=3, ipady=3)
+                Button(frame2, text = n,height= 3, width=6,bg='white',fg='black').grid(row=i, column=j,ipadx=3, ipady=3)
             else:
-                Button(frame, text = n,height= 3, width=6,bg='blue',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)
+                Button(frame2, text = n,height= 3, width=6,bg='blue',fg='white').grid(row=i, column=j,ipadx=3, ipady=3)    
+    
 def counter():
     global step
     global frame2
-    step= step+1
-    creategrid(frame2,step)
+    global frame1
+    if(len(states)-1 ==step):
+        label =Message( frame1, text="Fuck")
+        label.pack()
+    else:
+        step= step+1
+    creategrid(step)
             
 if __name__ == '__main__':
 
@@ -605,7 +620,7 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"./manifests/ShipCase4.txt"
+    path = r"./manifests/testBlue.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -732,7 +747,7 @@ if __name__ == '__main__':
     frame4 = Frame(frame, bd=1, relief='solid')
     frame4.grid(sticky='nsew', padx=5, pady=5)
     Button(frame4, text="Next",height= 3, width=6,bg='white',fg='black',command=counter).grid(row=1, column=1,ipadx=3, ipady=3)
-    creategrid(frame2,0)
+    creategrid(0)
     frame.pack(expand=True) 
     ws.mainloop()
 
