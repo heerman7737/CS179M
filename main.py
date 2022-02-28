@@ -304,6 +304,7 @@ def BalanceBoxes(arr):
             if box.target == False:# need move but not wanted
                 if box.colNum > MID_LINE: # it's on right
                     tempGrid = [row[MID_LINE-1:] for row in data] # index 0-5
+                    tempGrid =tempGrid[:-2]
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,-1,tempGrid)
                     col +=MID_LINE+1 # offset for sliced grid
@@ -316,6 +317,7 @@ def BalanceBoxes(arr):
 
                 else:#its on left
                     tempGrid = [row[:MID_LINE+1] for row in data]
+                    tempGrid =tempGrid[:-2]
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,box.colNum,tempGrid)
                     print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
@@ -326,6 +328,7 @@ def BalanceBoxes(arr):
             else:# is target box
                 if box.colNum <= MID_LINE: # it's on left
                     tempGrid = [row[MID_LINE+1:] for row in data] # index for right
+                    tempGrid =tempGrid[:-2]
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,-1,tempGrid)
                     col +=MID_LINE+1 # offset for sliced grid
@@ -338,7 +341,7 @@ def BalanceBoxes(arr):
 
                 else:#its on right
                     tempGrid = [row[:MID_LINE+1] for row in data]
-                    
+                    tempGrid =tempGrid[:-2]
                     print_ship2(tempGrid)
                     row,col,dist=nearspot(box.rowNum,box.colNum,tempGrid)
                     print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
@@ -464,6 +467,8 @@ def AvailableSpot(x,y,grid):
             if validspot(j,i,grid) and y !=i: #not check self 
                 d = getdistance(x,y,j,i)
                 spots.append ([j,i,d])
+                print("spot: ")
+                print([j,i,d])
                 break
             else:
                 continue
@@ -573,7 +578,7 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"./manifests/ShipCase4.txt"
+    path = r"./manifests/testBlue.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
