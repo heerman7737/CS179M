@@ -9,6 +9,7 @@ import time
 from operator import attrgetter
 from tkinter import *
 from tkinter.tix import *
+from turtle import ondrag
 from main import *
 
 # SHIPGOAL = [9,1]
@@ -34,52 +35,71 @@ class container:
         self.target = False
 
 
-def offload(todo_off):  # 1
+def offload(box,isOnPort): # move current box
+    global crane_x
+    global crane_y
+    global estimatedTime
     print('unload all needed containers first')
-    BoxToOffload = []
-    for i in range(len(todo_off)):  # parse input and link box in data
-        # print(f'here: {len(todo_off)}')
-        option, row, col = todo_off[i].split()
-        # print(f'unload todo:{row}, {col}')
-        BoxToOffload.append(data[int(row) - 1][int(col) - 1])  # input matches manifest
 
-    while (len(BoxToOffload) > 0):  # pop after unload
-        needMove = findBox(data, BoxToOffload)  # find target box near top and stuff on top
+    
+    if box.target == True:  # is my target, unload to pink
+        box.weight = 0
+        box.name = 'UNUSED'
+        mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1}] to [9,1](pink)')
 
-        if len(needMove) <= 0:
-            print('unload box index <=0')
-        mytarget = needMove[len(needMove) - 1]
+        tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,8, 0)
+        print('ttttttttttttttttttttttt')
+        print(getdistance(crane_x, crane_y, box.rowNum, box.colNum))
+        if isOnPort:
+            tempTime+=2
+        estimatedTime += tempTime +2 
+        estimatedTimeEach.append(tempTime)
+        crane_x = 8
+        crane_y = 0
+        isOnPort=True
+    else:  # not target, move to elsewhere
+        
+        row, col, dist = nearspot(box.rowNum, box.colNum, data)
+        swapData(box.rowNum, box.colNum, row, col, data)
+        mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+        
+        tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,row, col)
+        if isOnPort:
+            tempTime+=2
+        estimatedTime += tempTime
+        estimatedTimeEach.append(tempTime)
+        crane_x = row
+        crane_y = col
+        isOnPort=False
+    return isOnPort
+   
 
-        for box in needMove:  # box in arr + others on top
-            if box.target == True:  # is my target, unload to pink
-                box.weight = 0
-                box.name = 'UNUSED'
-                mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1} to [9,1](pink)')
-            else:  # not target, move to elsewhere
-                row, col, dist = nearspot(box.rowNum, box.colNum, data)
-                swapData(box.rowNum, box.colNum, row, col, data)
-                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-
-        BoxToOffload.remove(mytarget)
-
-    mysequence.append('unload all needed containers first')
+    
 
 
-def load(todo_on):  # 2
+def load(todo_on,isOnPort):  # 2
+    global crane_x
+    global crane_y
+    global estimatedTime
     print('load all new containers')
-    mysequence.append('load all new containers')
-    cost = 0
-    flag = False
-    for i in range(int(len(todo_on))):
-        u, weight, name = todo_on[i].split()
-        # print(f"todo weight:{weight} name:{name}")
-        tempgrid = data[:-2]
-        row, col, dist = nearspot(8, -1, tempgrid)  # virtual pink top left
 
-        data[row][col].name = name
-        data[row][col].weight = weight
-        mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
+    useless, weight, name = todo_on[0].split()
+    todo_on.pop(0)
+    # print(f"todo weight:{weight} name:{name}")
+    tempgrid = data[:-2]
+    row, col, dist = nearspot(8, -1, tempgrid)  # virtual pink top left
 
+    data[row][col].name = name
+    data[row][col].weight = weight
+    mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
+    
+    tempTime = getdistance(crane_x, crane_y, 8,0) + getdistance(8,0,row, col)
+    if isOnPort:
+        tempTime+=2
+    estimatedTime += tempTime
+    estimatedTimeEach.append(tempTime)
+    crane_x = row
+    crane_y = col
     # print('===========ship==================')
     print_ship2(data)
 
@@ -101,6 +121,10 @@ def print_ship():
 
 
 def task1():
+    global crane_x
+    global crane_y
+    global estimatedTime
+    isOnPort = True
     print('task 1 load offload\n')
     # input format "on/off , x, y"
     todo_off = []
@@ -118,12 +142,56 @@ def task1():
 
         userinput = input("input option as: 1/2 , x, y")
 
-    print('running offload algorithm... \n')
-    offload(todo_off)
-    print('running load algorithm... \n')
-    # u,weight,name = todo_on[0].split()
-    # print(f"todo weight:{weight} name:{name}")
-    load(todo_on)
+
+    BoxToOffload = []
+    for i in range(len(todo_off)):  # parse input and link box in data
+        # print(f'here: {len(todo_off)}')
+        option, offrow, offcol = todo_off[i].split()
+        # print(f'unload todo:{row}, {col}')
+        BoxToOffload.append(data[int(offrow) - 1][int(offcol) - 1])  # input matches manifest
+    
+
+    needMove = findBox(data, BoxToOffload)  # find target boxes and stuff on top
+    
+    while len(needMove)>0 or len(todo_on) >0: #if one of two task is not done
+        onDist = offDist= 999999
+        if len(todo_on) >0:
+            onDist =0
+            if not isOnPort:
+                onDist = getdistance(crane_x, crane_y, 8, 0) +2
+        if len(needMove)>0: # if has offload task left, calc offDist
+            
+            box = nearBox(data, needMove)
+            offDist = getdistance(crane_x, crane_y, box.rowNum, box.colNum)
+            if isOnPort:
+                offDist +=2
+        if offDist < onDist: #offload cost better than onload
+            print('running offload algorithm... \n')
+            isOnPort = offload(box,isOnPort)
+            needMove.remove(box)
+
+
+        else: #onload cost better than offload
+            print('running load algorithm... \n')
+            isOnPort = False
+            load(todo_on,isOnPort) # will pop inside load func
+        print('rrrrrrrrrrrrrrrrrrrrrrrrrrr... \n')
+
+
+
+        
+        
+
+
+   
+        
+
+    # print('running offload algorithm... \n')
+    # offload(todo_off)
+    # print('running load algorithm... \n')
+    # # u,weight,name = todo_on[0].split()
+    # # print(f"todo weight:{weight} name:{name}")
+    # load(todo_on)
 
 
 def balance(grid):
@@ -608,8 +676,8 @@ def getGrid(r):
         for j in range(12):
             col1.append(states[r][i][j].name)
             col2.append(states[r][i][j].weight)
-            col3.append(states[r][i][j].rowNum)
-            col4.append(states[r][i][j].colNum)
+            col3.append(states[r][i][j].rowNum+1)
+            col4.append(states[r][i][j].colNum+1)
 
         arrName.append(col1)
         arrWeight.append(col2)
@@ -650,6 +718,7 @@ def counter():
     global frame
     global ws
     global mysequence
+    global estimatedTime
     global estimatedTimeEach
     frame.destroy()
     frame = Frame(ws)
@@ -666,8 +735,8 @@ def counter():
     else:
         v = StringVar()
 
-        est = estimatedTimeEach[step]
-        v.set("Estimation Time: " + str(est) + " minutes")
+        estimatedTime -= estimatedTimeEach[step]
+        v.set("Estimation Time: " + str(estimatedTime) + " minutes")
 
         estimate_label = Label(frame, textvariable=v)
         # estimate_label.update_idletasks()
@@ -809,7 +878,8 @@ if __name__ == '__main__':
     print('moving sequence:\n')
     print(mysequence)
     print(f'estimated time: {estimatedTime}')
-    estimatedTimeEach.reverse()
+    print_ship2(data)
+    # estimatedTimeEach.reverse()
 
     # for i in range(len(states)):
     #    print_ship2(states[i])
