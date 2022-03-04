@@ -2,16 +2,19 @@ from ast import Constant
 from cmath import log10
 import csv
 import copy
-from glob import escape, glob
-from math import dist
+from glob import escape
+import math
 import sys
 import time
 from operator import attrgetter
 from tkinter import *
-from tkinter.tix import *
-from turtle import ondrag
-from main import *
-
+#from tkinter.tix import *
+#from main import *
+from functools import partial
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import filedialog
+from tkinter.filedialog import askopenfile 
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
 MID_LINE = 5
@@ -35,71 +38,52 @@ class container:
         self.target = False
 
 
-def offload(box,isOnPort): # move current box
-    global crane_x
-    global crane_y
-    global estimatedTime
+def offload(todo_off):  # 1
     print('unload all needed containers first')
+    BoxToOffload = []
+    for i in range(len(todo_off)):  # parse input and link box in data
+        # print(f'here: {len(todo_off)}')
+        option, row, col = todo_off[i].split()
+        # print(f'unload todo:{row}, {col}')
+        BoxToOffload.append(data[int(row) - 1][int(col) - 1])  # input matches manifest
 
-    
-    if box.target == True:  # is my target, unload to pink
-        box.weight = 0
-        box.name = 'UNUSED'
-        mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1}] to [9,1](pink)')
+    while (len(BoxToOffload) > 0):  # pop after unload
+        needMove = findBox(data, BoxToOffload)  # find target box near top and stuff on top
 
-        tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,8, 0)
-        print('ttttttttttttttttttttttt')
-        print(getdistance(crane_x, crane_y, box.rowNum, box.colNum))
-        if isOnPort:
-            tempTime+=2
-        estimatedTime += tempTime +2 
-        estimatedTimeEach.append(tempTime)
-        crane_x = 8
-        crane_y = 0
-        isOnPort=True
-    else:  # not target, move to elsewhere
-        
-        row, col, dist = nearspot(box.rowNum, box.colNum, data)
-        swapData(box.rowNum, box.colNum, row, col, data)
-        mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-        
-        tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,row, col)
-        if isOnPort:
-            tempTime+=2
-        estimatedTime += tempTime
-        estimatedTimeEach.append(tempTime)
-        crane_x = row
-        crane_y = col
-        isOnPort=False
-    return isOnPort
-   
+        if len(needMove) <= 0:
+            print('unload box index <=0')
+        mytarget = needMove[len(needMove) - 1]
 
-    
+        for box in needMove:  # box in arr + others on top
+            if box.target == True:  # is my target, unload to pink
+                box.weight = 0
+                box.name = 'UNUSED'
+                mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1} to [9,1](pink)')
+            else:  # not target, move to elsewhere
+                row, col, dist = nearspot(box.rowNum, box.colNum, data)
+                swapData(box.rowNum, box.colNum, row, col, data)
+                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+
+        BoxToOffload.remove(mytarget)
+
+    mysequence.append('unload all needed containers first')
 
 
-def load(todo_on,isOnPort):  # 2
-    global crane_x
-    global crane_y
-    global estimatedTime
+def load(append_boxes):  # 2
     print('load all new containers')
+    mysequence.append('load all new containers')
+    cost = 0
+    flag = False
+    for i in range(int(len(append_boxes))):
+        u, weight, name = append_boxes[i].split()
+        # print(f"todo weight:{weight} name:{name}")
+        tempgrid = data[:-2]
+        row, col, dist = nearspot(8, -1, tempgrid)  # virtual pink top left
 
-    useless, weight, name = todo_on[0].split()
-    todo_on.pop(0)
-    # print(f"todo weight:{weight} name:{name}")
-    tempgrid = data[:-2]
-    row, col, dist = nearspot(8, -1, tempgrid)  # virtual pink top left
+        data[row][col].name = name
+        data[row][col].weight = weight
+        mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
 
-    data[row][col].name = name
-    data[row][col].weight = weight
-    mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
-    
-    tempTime = getdistance(crane_x, crane_y, 8,0) + getdistance(8,0,row, col)
-    if isOnPort:
-        tempTime+=2
-    estimatedTime += tempTime
-    estimatedTimeEach.append(tempTime)
-    crane_x = row
-    crane_y = col
     # print('===========ship==================')
     print_ship2(data)
 
@@ -120,83 +104,59 @@ def print_ship():
             print(f'[{data[x][y].rowNum} , {data[x][y].colNum}] w: {data[x][y].weight} n: {data[x][y].name}')
 
 
-def task1():
-    global crane_x
-    global crane_y
-    global estimatedTime
-    isOnPort = True
+def task1(mode, weight, name):
     print('task 1 load offload\n')
     # input format "on/off , x, y"
     todo_off = []
     todo_on = []
-    userinput = input("input option as: 1/2 , x, y")  # 1 = off, 2 = on
     # off x y are coord of box need unload
     # on: x is weight, y is name
-
-    while userinput != "confirm":
-
-        if userinput[0] == '1':
-            todo_off.append(userinput)
-        elif userinput[0] == '2':
-            todo_on.append(userinput)
+    if mode == 1:
+        todo_off.append(userinput)
+    elif mode == 2:
+        todo_on.append(userinput)
 
         userinput = input("input option as: 1/2 , x, y")
 
-
-    BoxToOffload = []
-    for i in range(len(todo_off)):  # parse input and link box in data
-        # print(f'here: {len(todo_off)}')
-        option, offrow, offcol = todo_off[i].split()
-        # print(f'unload todo:{row}, {col}')
-        BoxToOffload.append(data[int(offrow) - 1][int(offcol) - 1])  # input matches manifest
-    
-
-    needMove = findBox(data, BoxToOffload)  # find target boxes and stuff on top
-    
-    while len(needMove)>0 or len(todo_on) >0: #if one of two task is not done
-        onDist = offDist= 999999
-        if len(todo_on) >0:
-            onDist =0
-            if not isOnPort:
-                onDist = getdistance(crane_x, crane_y, 8, 0) +2
-        if len(needMove)>0: # if has offload task left, calc offDist
-            
-            box = nearBox(data, needMove)
-            offDist = getdistance(crane_x, crane_y, box.rowNum, box.colNum)
-            if isOnPort:
-                offDist +=2
-        if offDist < onDist: #offload cost better than onload
-            print('running offload algorithm... \n')
-            isOnPort = offload(box,isOnPort)
-            needMove.remove(box)
+    print('running offload algorithm... \n')
+    offload(todo_off)
+    print('running load algorithm... \n')
+    # u,weight,name = todo_on[0].split()
+    # print(f"todo weight:{weight} name:{name}")
+    load(todo_on)
 
 
-        else: #onload cost better than offload
-            print('running load algorithm... \n')
-            isOnPort = False
-            load(todo_on,isOnPort) # will pop inside load func
-        print('rrrrrrrrrrrrrrrrrrrrrrrrrrr... \n')
+# def task2():
+#     print('task 2 balance\n')
+#     mid = 6
+#     total = checkBalance()
+#     left = total[0]
+#     right = total[1]
 
+#     if abs((left - right))/(left + right) <= 0.1:  # ship is balanced when rate <= 10%
+#         print('Ship is balanced\n')
+#         return
 
+#     while abs((left - right))/(left + right) > 0.1: # if ship is not balanced ,
+#                                                     # we always move the container with closest weight to the difference
+#         if left < right:  # 35     40,50,120;
+#             diff = right - left  # 175
+#             closest_weight = 99999 # 40
+#             tmp = 99999
+#             for i in range(int(len(data) - 2)):
+#                 for j in range(mid, 12):
 
-        
-        
+#                     if abs(data[i][j].weight - diff) < tmp: # 135
+#                         tmp = abs(data[i][j].weight - diff)
+#                         closest_weight = data[i][j].we ight
+#                         closest_x = data[i][j].rowNum #1
+#                         closest_y = data[i][j].colNum #3
 
-
-   
-        
-
-    # print('running offload algorithm... \n')
-    # offload(todo_off)
-    # print('running load algorithm... \n')
-    # # u,weight,name = todo_on[0].split()
-    # # print(f"todo weight:{weight} name:{name}")
-    # load(todo_on)
-
+#             goal = data[closest_x][mid+1]
 
 def balance(grid):
     left, right = checkBalance()
-    if min(left, right) / max(left, right) > 0.9:  # ship is balanced when rate <= 10%
+    if abs((left - right)) / (left + right) <= 0.1:  # ship is balanced when rate <= 10%
         print('Ship is balanced\n')
         return
 
@@ -220,16 +180,76 @@ def balance(grid):
     goLeft.sort(key=lambda x: x.weight)
     goRight.sort(key=lambda x: x.weight)
 
-    tLeft = []
-    tRight = []
-    for c in goLeft:
-        tLeft.append(c.weight)
-    for c in goRight:
-        tRight.append(c.weight)
+    # tLeft =[]
+    # tRight =[]
+    # for c in goLeft:
+    #     tLeft.append(c.weight)
+    # for c in goRight:
+    #     tRight.append(c.weight)
 
     # print(f'goleft: {tLeft}\ngoright: {tRight}\nchoice: {choice}')
-    # ccccccccccccccccccccccccccccccccccccccccc
-    goLeft, goRight = removeMin(goLeft, goRight)
+
+    swapable = True  # not move min and still within 10%
+    checkLeft = checkRight = True
+    while (swapable):
+
+        totalWeightLeft = sumWeight(goLeft)
+        totalWeightRight = sumWeight(goRight)
+        # print(f'll:{totalWeightLeft} rr: {totalWeightRight}')
+        # tLeft =[]
+        # tRight =[]
+        # for c in goLeft:
+        #     tLeft.append(c.weight)
+        # for c in goRight:
+        #     tRight.append(c.weight)
+
+        # print(f'goleft: {tLeft}\ngoright: {tRight}\nchoice: {choice}')
+        # print( f'{goLeft[0].weight} max {max(goLeft, key=attrgetter("weight")).weight}')
+        if goLeft[0].colNum > MID_LINE and checkLeft:  # if min is in wrong side/ need move
+
+            if goLeft[0].weight == max(goLeft, key=attrgetter('weight')).weight:
+                checkLeft = False
+                break
+            minLeft = goLeft[0]
+            difference = (abs(totalWeightLeft - totalWeightRight) + (minLeft.weight * 2)) / (
+                    totalWeightLeft + totalWeightRight)
+            if difference < 0.1:  # keep min in right/not move to left still in 10%
+
+                goRight.append(goLeft[0])
+                goLeft.pop(0)
+                goLeft = goLeft[1:] + [goLeft[0]]
+                totalWeightLeft = sumWeight(goLeft)
+                totalWeightRight = sumWeight(goRight)
+
+            else:  # min is already in correct side
+                print('no check left')
+                checkLeft = False
+        else:
+            goRight = goRight[1:] + [goRight[0]]
+
+        if goRight[0].colNum <= MID_LINE and checkRight:  # if min is in wrong side/ need move
+            if goRight[0].weight == max(goRight, key=attrgetter('weight')).weight:
+                checkRight = False
+                break
+
+            minRight = goRight[0]
+            difference = (abs(totalWeightRight - totalWeightLeft) + (minRight.weight * 2)) / (
+                    totalWeightRight + totalWeightLeft)
+            if difference < 0.1:  # keep min in Left/not move to Right still in 10%
+                goLeft.append(goRight[0])
+                goRight.pop(0)
+                goLeft = goLeft[1:] + [goLeft[0]]
+                totalWeightLeft = sumWeight(goLeft)
+                totalWeightRight = sumWeight(goRight)
+            else:  # min is already in correct side
+                print('no check right')
+                checkRight = False
+        else:
+            goRight = goRight[1:] + [goRight[0]]
+
+        if not checkLeft and not checkRight:
+            swapable = False
+
     tempGoLeft = []
     for box in goLeft:
         if box.colNum > MID_LINE:  # is in wrong side
@@ -262,242 +282,106 @@ def balance(grid):
     BalanceBoxes(needmove)
 
 
-def removeMin(goLeft, goRight):
-    swapable = True  # not move min and still within 10%
-    checkLeft = checkRight = True
-    while (swapable):
-
-        totalWeightLeft = sumWeight(goLeft)
-        totalWeightRight = sumWeight(goRight)
-        print(f'll:{totalWeightLeft} rr: {totalWeightRight}')
-        tLeft = []
-        tRight = []
-        for c in goLeft:
-            tLeft.append(c.weight)
-        for c in goRight:
-            tRight.append(c.weight)
-
-        print(f'goleft: {tLeft}\ngoright: {tRight}\n')
-        print(f'checkleft: {checkLeft} checkright: {checkRight} swapable: {swapable}')
-        # print( f'{goLeft[0].weight} max {max(goLeft, key=attrgetter("weight")).weight}')
-        if not checkLeft and not checkRight:
-            swapable = False
-        if goLeft[0].weight == max(goLeft, key=attrgetter('weight')).weight:
-            checkLeft = False
-
-        if goLeft[0].colNum > MID_LINE and checkLeft:  # if min is in wrong side/ need move
-
-            minLeft = goLeft[0]
-            # difference = (abs(totalWeightLeft - totalWeightRight) + (minLeft.weight * 2)) / (
-            #         totalWeightLeft + totalWeightRight)
-            tempGoLeft = totalWeightLeft + minLeft.weight
-            tempGoRight = totalWeightRight - minLeft.weight
-            difference = (min(tempGoLeft, tempGoRight)) / (max(tempGoLeft, tempGoRight))
-            if difference > 0.9:  # keep min in right/not move to left still in 10%
-
-                goRight.append(goLeft[0])
-                goLeft.pop(0)
-                goLeft = goLeft[1:] + [goLeft[0]]
-                totalWeightLeft = sumWeight(goLeft)
-                totalWeightRight = sumWeight(goRight)
-
-            else:  # min is already in correct side
-                print('no check left')
-                checkLeft = False
-        else:
-            goLeft = goLeft[1:] + [goLeft[0]]
-
-        if goRight[0].weight == max(goRight, key=attrgetter('weight')).weight:
-            checkRight = False
-
-        if goRight[0].colNum <= MID_LINE and checkRight:  # if currently on left
-            # print(f"max {max(goRight, key=attrgetter('weight')).weight}, current: {goRight[0].weight} ")
-
-            minRight = goRight[0]
-            # difference = (abs(totalWeightRight - totalWeightLeft) + (minRight.weight * 2)) / (
-            #         totalWeightRight + totalWeightLeft)
-            tempGoLeft = totalWeightLeft + minRight.weight
-            tempGoRight = totalWeightRight - minRight.weight
-            difference = (min(tempGoLeft, tempGoRight)) / (max(tempGoLeft, tempGoRight))
-            if difference > 0.9:  # keep min in Left/not move to Right still in 10%
-
-                goLeft.append(goRight[0])
-                goRight.pop(0)
-                goLeft = goLeft[1:] + [goLeft[0]]
-                totalWeightLeft = sumWeight(goLeft)
-                totalWeightRight = sumWeight(goRight)
-            else:  # min is already in correct side
-                print('no check right')
-                checkRight = False
-        else:
-
-            goRight = goRight[1:] + [goRight[0]]
-
-    return goLeft, goRight
-
-
 def BalanceBoxes(arr):
     targetBoxes = arr
-    global crane_x
-    global crane_y
-    global estimatedTime
-    needMove = findBox(data, targetBoxes)  # all box need move(target or tops)
+    while len(targetBoxes) > 0:  # pop after move
+        print("need write this ")
 
-    # for x in needMove:
-    # print(f'neeeeeeee: {len(needMove)}')
-    # print(f'findbox: {needMove[0].name}')
-    while len(needMove) > 0:  # pop after move
-        box = nearBox(data, needMove)
-        # box = needMove[0]
+        needMove = findBox(data, arr)
 
-        if box.target == False:  # need move but not wanted
-            if box.colNum > MID_LINE:  # it's on right
-                tempGrid = [row[MID_LINE + 1:] for row in data]  # index 0-5
-                tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
-                row, col, dist = nearspot(box.rowNum, box.colNum - (MID_LINE + 1), tempGrid)
-                col += MID_LINE + 1  # offset for sliced grid
-                print(f'right to right: {box.name} coord: {box.rowNum} , {box.colNum}')
-                print(f'near: {row} , {col}')
-                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
-                                                                                               row, col)
-                estimatedTime += tempTime
-                estimatedTimeEach.append(tempTime)
-                crane_x = row
-                crane_y = col
+        for i in needMove:
+            print(f'name: {i.name}')
+        mytarget = needMove[len(needMove) - 1]
+        # print(f'targetaaaaaaaaaaaaaaaaaa: {len(needMove)}')
+        if len(needMove) <= 0:
+            print('balance box index <=0')
 
-                swapData(box.rowNum, box.colNum, row, col, data)
-                state = copy.deepcopy(data)
-                states.append(state)
-                print_ship2(data)
+        for box in needMove:  # box in arr + others on top
+            if box.target == False:  # need move but not wanted
+                if box.colNum > MID_LINE:  # it's on right
+                    tempGrid = [row[MID_LINE - 1:] for row in data]  # index 0-5
+                    tempGrid = tempGrid[:-2]
+                    print_ship2(tempGrid)
+                    row, col, dist = nearspot(box.rowNum, -1, tempGrid)
+                    col += MID_LINE + 1  # offset for sliced grid
+                    print(f'right to right: {box.name} coord: {box.rowNum} , {box.colNum}')
+                    print(f'near: {row} , {col}')
+                    mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                    swapData(box.rowNum, box.colNum, row, col, data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
+                    print_ship2(data)
 
 
-            else:  # its on left
-                tempGrid = [row[:MID_LINE + 1] for row in data]
-                tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
-                row, col, dist = nearspot(box.rowNum, box.colNum, tempGrid)
-                print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
-                print(f'near: {row} , {col} dist:{dist}')
-                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                else:  # its on left
+                    tempGrid = [row[:MID_LINE + 1] for row in data]
+                    tempGrid = tempGrid[:-2]
+                    print_ship2(tempGrid)
+                    row, col, dist = nearspot(box.rowNum, box.colNum, tempGrid)
+                    print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
+                    print(f'near: {row} , {col} dist:{dist}')
+                    mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                    swapData(box.rowNum, box.colNum, row, col, data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
+                    print_ship2(data)
+            else:  # is target box
+                if box.colNum <= MID_LINE:  # it's on left
+                    tempGrid = [row[MID_LINE + 1:] for row in data]  # index for right
+                    tempGrid = tempGrid[:-2]
+                    print_ship2(tempGrid)
+                    row, col, dist = nearspot(box.rowNum, -1, tempGrid)
+                    col += MID_LINE + 1  # offset for sliced grid
+                    # mysequence.append("balance: ")
+                    print(f'left to right: {box.name} coord: {box.rowNum} , {box.colNum}')
+                    print(f'near: {row} , {col} dist:{dist}')
+                    mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                    swapData(box.rowNum, box.colNum, row, col, data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
+                    print_ship2(data)
 
-                tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
-                                                                                               row, col)
-                estimatedTime += tempTime
-                estimatedTimeEach.append(tempTime)
-                crane_x = row
-                crane_y = col
-                swapData(box.rowNum, box.colNum, row, col, data)
-                state = copy.deepcopy(data)
-                states.append(state)
-                print_ship2(data)
-        else:  # is target box
-            if box.colNum <= MID_LINE:  # it's on left
-                tempGrid = [row[MID_LINE + 1:] for row in data]  # index for right
-                tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
-                row, col, dist = nearspot(box.rowNum, box.colNum - (MID_LINE + 1), tempGrid)
-                col += MID_LINE + 1  # offset for sliced grid
-                # mysequence.append("balance: ")
-                print(f'left to right: {box.name} coord: {box.rowNum} , {box.colNum}')
-                print(f'near: {row} , {col} dist:{dist}')
-                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
-                                                                                               row, col)
-                estimatedTime += tempTime
-                estimatedTimeEach.append(tempTime)
-                crane_x = row
-                crane_y = col
-                swapData(box.rowNum, box.colNum, row, col, data)
-                state = copy.deepcopy(data)
-                states.append(state)
-                print_ship2(data)
-
-            else:  # its on right
-                tempGrid = [row[:MID_LINE + 1] for row in data]
-                tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
-                row, col, dist = nearspot(box.rowNum, box.colNum, tempGrid)
-                print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
-                print(f'near: {row} , {col}')
-                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
-                                                                                               row, col)
-                estimatedTime += tempTime
-                estimatedTimeEach.append(tempTime)
-                crane_x = row
-                crane_y = col
-                swapData(box.rowNum, box.colNum, row, col, data)
-                state = copy.deepcopy(data)
-                states.append(state)
-                print_ship2(data)
-
-        needMove.remove(box)
-
-
-# def BalanceBoxes(arr):
-#     targetBoxes = arr
-#     while len(targetBoxes) > 0:  # pop after move
-#         print("need write this ")
-
-#         needMove = findBox(data, targetBoxes)
-
-#         for i in needMove:
-#             print(f'name: {i.name}')
-#         mytarget = needMove[len(needMove) - 1]
-#         # print(f'targetaaaaaaaaaaaaaaaaaa: {len(needMove)}')
-#         if len(needMove) <= 0:
-#             print('balance box index <=0')
-
-#         for box in needMove:  # box in arr + others on top
-
-#         targetBoxes.remove(mytarget)
+                else:  # its on right
+                    tempGrid = [row[:MID_LINE + 1] for row in data]
+                    tempGrid = tempGrid[:-2]
+                    print_ship2(tempGrid)
+                    row, col, dist = nearspot(box.rowNum, box.colNum, tempGrid)
+                    print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
+                    print(f'near: {row} , {col}')
+                    mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                    swapData(box.rowNum, box.colNum, row, col, data)
+                    state = copy.deepcopy(data)
+                    states.append(state)
+                    print_ship2(data)
+        targetBoxes.remove(mytarget)
 
 
 def swapData(row1, col1, row2, col2, grid):
     # 2 is always unused before swap
     grid[row2][col2].weight, grid[row1][col1].weight = grid[row1][col1].weight, grid[row2][col2].weight
     grid[row2][col2].name, grid[row1][col1].name = grid[row1][col1].name, grid[row2][col2].name
-    grid[row2][col2].target, grid[row1][col1].target = grid[row1][col1].target, grid[row2][col2].target
 
 
 def findBox(grid, arr):
     names = []
     needMoves = []
-    for target in arr:
+    for box in arr:
+        names.append(box.name)
+    # print(f'hhhhhhhhhhhh {names}')
+    for row in grid[::-1]:  # top row first
+        for box in row:
+            # print(f'ccccc: {row} col {col}')
+            # box = grid[row][col]
 
-        # print(f'hhhhhhhhhhhh {names}')
-        for row in grid[::-1]:  # top row first
-            for box in row:
-                # print(f'ccccc: {row} col {col}')
-                # box = grid[row][col]
+            if box in arr:  # found target box
 
-                if box == target:  # found target box
-
-                    temp = checkTop(grid, box)
-                    for asd in temp[::-1]:
-                        needMoves.append(asd)
-                    box.target = True
-                    needMoves.append(box)
-    res = []
-    [res.append(x) for x in needMoves if x not in res]
-    return res
-
-
-def nearBox(grid, needMove):  # return box close to crane position
-    minDist = 999999  # some random large num
-    minBox = needMove[0]  # assign random
-    for box in needMove:
-        temp = checkTop(grid, box)
-        check = any(item in needMove for item in temp)  # if any tops also in needmove
-        if check is True:
-            continue
-        dist = getdistance(crane_x, crane_y, box.rowNum, box.colNum)
-        if dist < minDist:
-            minDist = dist
-            minBox = box
-    return minBox
+                temp = checkTop(grid, box)
+                for asd in temp[::-1]:
+                    needMoves.append(asd)
+                box.target = True
+                needMoves.append(box)
+                return needMoves
+    # print(f'hhhhhhhhhhhh {len(needMoves)}')
 
 
 def checkTop(grid, currentBox):
@@ -574,7 +458,7 @@ def AvailableSpot(x, y, grid):
             if validspot(j, i, grid) and y != i:  # not check self
                 d = getdistance(x, y, j, i)
                 spots.append([j, i, d])
-                print("Available spot: ")
+                print("spot: ")
                 print([j, i, d])
                 break
             else:
@@ -592,9 +476,9 @@ def nearspot(x, y, grid):  # return the x , y ,dist of nearest aviliable spot
     sorted_list = sorted(spots, key=lambda x: x[2])
     if y == -1:
         sorted_list[0][2] += 1
-    # global estimatedTime
-    # estimatedTime += int(sorted_list[0][2])
-    # print(f'time: {estimatedTime}')
+    global estimatedTime
+    estimatedTime += int(sorted_list[0][2])
+    print(f'time: {estimatedTime}')
     return sorted_list[0]
 
 
@@ -652,7 +536,8 @@ def menu():
 
     if choice == 1:
         # print('task 1 load offload\n')
-        task1()
+        #loadingUI()
+        pass
 
 
     elif choice == 2:
@@ -676,8 +561,8 @@ def getGrid(r):
         for j in range(12):
             col1.append(states[r][i][j].name)
             col2.append(states[r][i][j].weight)
-            col3.append(states[r][i][j].rowNum+1)
-            col4.append(states[r][i][j].colNum+1)
+            col3.append(states[r][i][j].rowNum)
+            col4.append(states[r][i][j].colNum)
 
         arrName.append(col1)
         arrWeight.append(col2)
@@ -701,7 +586,7 @@ def creategrid(r):
             if (n == 'NAN'):
                 b = Button(frame2, text=n, height=3, width=6, bg='black', fg='white')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
-                tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+                tip.bind_widget(b, balloonmsg="weight: "+str(w)+"\nlocation: ["+str(x)+","+str(y)+"]")
             elif (n == 'UNUSED'):
                 b = Button(frame2, text=n, height=3, width=6, bg='white', fg='black')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
@@ -712,45 +597,110 @@ def creategrid(r):
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
     # tip.bind_widget(my_button, balloonmsg="Python is an interpreted, high-level and general - purpose programming language")
 
-
 def counter():
     global step
     global frame
     global ws
     global mysequence
-    global estimatedTime
-    global estimatedTimeEach
-    frame.destroy()
-    frame = Frame(ws)
-    frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
-    Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
-
-
-    # print("here"+str(estimatedTimeEach))
-    if len(states) - 1 == step:
+    if (len(states) - 1 == step):
 
         done_label = Label(frame, text="Congrats! Job is Done!\nNew manifest is saved")
         # done_label.place(relx=2, rely=2, anchor='ne')
         done_label.pack(ipadx=10, ipady=10)
     else:
-        v = StringVar()
-
-        estimatedTime -= estimatedTimeEach[step]
-        v.set("Estimation Time: " + str(estimatedTime) + " minutes")
-
-        estimate_label = Label(frame, textvariable=v)
-        # estimate_label.update_idletasks()
-        estimate_label.pack(ipadx=20, ipady=20)
         seq = mysequence[step]
         seq_label = Label(frame, text=seq)
         seq_label.pack(ipadx=10, ipady=10)
-
         step = step + 1
     creategrid(step)
+def loadingUI():
+    global append_boxes
+    append_boxes =[]
+    global f1, f2, f3
+    f1.pack(side=TOP, fill=X)
+    f2.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
+    f3.pack(side=LEFT, fill=Y, padx=10, pady=10)
+    #Button(f2, text="Name: ", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
+    #Button(f2, text="Weight", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
+    #Button(f2, text="F3Button", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
+    global loadws
+    r=0
+    arrName = []
+    arrWeight = []
+    arrX = []
+    arrY = []
+    for i in range(9, -1, -1):
+        col1 = []
+        col2 = []
+        col3 = []
+        col4 = []
+        for j in range(12):
+            col1.append(states[r][i][j].name)
+            col2.append(states[r][i][j].weight)
+            col3.append(states[r][i][j].rowNum)
+            col4.append(states[r][i][j].colNum)
 
+        arrName.append(col1)
+        arrWeight.append(col2)
+        arrX.append(col3)
+        arrY.append(col4)
+    # print(arrName)
+    arr=arrName, arrWeight, arrX, arrY
+    #tip = Balloon(loadws)
+    #tip = Balloon(tkWindow)
+    for i in range(10):
+        for j in range(12):
+            n = arr[0][i][j]
+            w = arr[1][i][j]
+            x = arr[2][i][j]
+            y = arr[3][i][j]
+            if (n == 'NAN'):
+                b = Button(f3, text=n, height=3, width=6, bg='black', fg='white')
+                b.grid(row=i, column=j, ipadx=3, ipady=3)
+            #   tip.bind_widget(b, balloonmsg="weight: "+str(w)+"\nlocation: ["+str(x)+","+str(y)+"]")
+            elif (n == 'UNUSED'):
+                b = Button(f3, text=n, height=3, width=6, bg='white', fg='black')
+                b.grid(row=i, column=j, ipadx=3, ipady=3)
+            #    tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+            else:
+                b = Button(f3, text=n, height=3, width=6, bg='blue', fg='white')
+                b.grid(row=i, column=j, ipadx=3, ipady=3)
+            #    tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+    do_stuff()
+def do_stuff():
+    global nameEntry
+    global weightEntry
+    WeightLabel = Label(f2, text="Weight: ").grid(row=4, column=0)
+    weight = IntVar()
+    weightEntry = Entry(f2, textvariable=weight).grid(row=4, column=1) 
+    nameLabel = Label(f2, text="Name: ").grid(row=6, column=0)
+    name = StringVar()
+    nameEntry = Entry(f2, textvariable=name).grid(row=6, column=1) 
+    onloadfunction = partial(onloadfunc, weight, name) 
+    offload_button = Button(f2,  text ='offload')
+    offload_button.place(relx=0.1, rely=0.1, anchor=CENTER)
+    onload_button = Button(f2,  text ='onload', command=onloadfunction)
+    onload_button.place(relx=0.3, rely=0.1, anchor=CENTER)
+    confirm_button = Button(f2,  text ='confirm', command=confirmfunc)
+    confirm_button.place(relx=0.5, rely=0.1, anchor=CENTER)
+   # clear_button = Button(f2,  text ='clear')
+   # clear_button.place(relx=0.7, rely=0.1, anchor=CENTER, command=clearfunc)
+    #ws.mainloop()
 
+def onloadfunc(weight, name):
+ 
+    print("name entered :", name.get())
+    print("weight entered: ", weight.get())
+    append_boxes.append([2,weight.get(),name.get()])
+    print (append_boxes)
+#   weightEntry.delete(0, END)
+#    nameEntry.delete(0, END)
+    do_stuff()
+   # task1(2,weight,name)
+def confirmfunc():
+    load(append_boxes)
 def balancePageUI():
-    global frame1, frame, frame2, estimatedTime
+    global frame1, frame, frame2
 
     frame1.pack(side=TOP, fill=X)
 
@@ -769,11 +719,7 @@ def balancePageUI():
     # frame4 = Frame(frame, bd=1, relief='solid')
     # frame4.grid(sticky='nsew', padx=5, pady=5)
     Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
-    estimate_label = Label(frame, text="Estimation Time: " + str(estimatedTime) + " minutes")
-    estimate_label.pack(ipadx=20, ipady=20)
-
     creategrid(0)
-    # estimate_label.destroy()
     frame.pack(expand=True)
 
 
@@ -817,7 +763,6 @@ if __name__ == '__main__':
     states = []
     step = 0
     estimatedTime = 0
-    estimatedTimeEach = []
     crane_x = 9
     crane_y = 1
 
@@ -878,8 +823,6 @@ if __name__ == '__main__':
     print('moving sequence:\n')
     print(mysequence)
     print(f'estimated time: {estimatedTime}')
-    print_ship2(data)
-    # estimatedTimeEach.reverse()
 
     # for i in range(len(states)):
     #    print_ship2(states[i])
@@ -891,15 +834,16 @@ if __name__ == '__main__':
             f.write(f"[{str(box.rowNum + 1).zfill(2)},{str(box.colNum + 1).zfill(2)}], {{{s}}}, {box.name}\n")
 
     f.close()
+    
     ws = Tk()
     ws.title('179M')
     ws.geometry('1200x900')
     ws.config(bg='#F2B33D')
-    frame1 = Frame(ws)
-    frame2 = Frame(ws)
-    frame = Frame(ws)  # parent of frame4 and frame5
-    balancePageUI()
-
+    f1 = Frame(ws)
+    f2 = Frame(ws)
+    f3 = Frame(ws)  
+   # balancePageUI()
+    loadingUI()
     ws.mainloop()
 
     # for x in range(int(len(data))):
