@@ -11,7 +11,7 @@ from tkinter import *
 from tkinter.tix import *
 from turtle import ondrag
 from main import *
-
+from itertools import chain
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
 MID_LINE = 5
@@ -44,11 +44,14 @@ def offload(box,isOnPort): # move current box
     
     if box.target == True:  # is my target, unload to pink
         box.weight = 0
-        box.name = 'UNUSED'
+        box.name = 'UNUSED' #delete box
+        box.target = False
+        state = copy.deepcopy(data)
+        states.append(state)
         mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1}] to [9,1](pink)')
 
         tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,8, 0)
-        print('ttttttttttttttttttttttt')
+        #print('ttttttttttttttttttttttt')
         print(getdistance(crane_x, crane_y, box.rowNum, box.colNum))
         if isOnPort:
             tempTime+=2
@@ -61,6 +64,8 @@ def offload(box,isOnPort): # move current box
         
         row, col, dist = nearspot(box.rowNum, box.colNum, data)
         swapData(box.rowNum, box.colNum, row, col, data)
+        state = copy.deepcopy(data)
+        states.append(state)
         mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
         
         tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,row, col)
@@ -91,6 +96,8 @@ def load(todo_on,isOnPort):  # 2
 
     data[row][col].name = name
     data[row][col].weight = weight
+    state = copy.deepcopy(data)
+    states.append(state)
     mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
     
     tempTime = getdistance(crane_x, crane_y, 8,0) + getdistance(8,0,row, col)
@@ -102,7 +109,21 @@ def load(todo_on,isOnPort):  # 2
     crane_y = col
     # print('===========ship==================')
     print_ship2(data)
+    if checkBot(row,col):
+        return True,data[row][col]
+    return False,data[row][col]
 
+def checkBot(row,col):
+    
+    for i in reversed(range(0, row + 1)):
+        #print(f'checkbot: {i}')
+        if data[i][col].target == True:
+            print(f'ccccccccheckbot: {i} true')
+            return True
+    return False
+    
+
+    
 
 def print_ship2(grid):
     print(f'============grid {len(grid)} x {len(grid[0])} ==================')
@@ -174,25 +195,48 @@ def task1():
         else: #onload cost better than offload
             print('running load algorithm... \n')
             isOnPort = False
-            load(todo_on,isOnPort) # will pop inside load func
-        print('rrrrrrrrrrrrrrrrrrrrrrrrrrr... \n')
+            isTargetUnder,newBox = load(todo_on,isOnPort) # will pop inside load func
+            if isTargetUnder: 
+                needMove.append(newBox)
 
 
 
+def SIFT():
+    print("running sift...")
+    flatten_data = list(chain.from_iterable(data)) #make 2d list 1d
+    flatten_box = []
+    leftNext = True # start load on left side first
+    colSize = len(data[0])/2 # ie 6
+    currentRow = 0
+    offsetCol = 0 # offset, not actual colNum
+
+
+    for each in flatten_data:# keep box, not unused, NAN
+        if each.weight != 0:
+            flatten_box.append(each)
+    allBox = sorted(flatten_box, key=lambda x: x.weight, reverse=True) # sort weight heavy -> light
+
+    while len(allBox) > 0 :  # large weight front, pop after done loop
+
+        for i in range (colSize):  
+            if leftNext :
+                col = MID_LINE - offsetCol # goal left
+            else:
+                col = MID_LINE + offsetCol + 1 #goal right
+            row = currentRow #goal col 
         
-        
+
+            
 
 
-   
-        
 
-    # print('running offload algorithm... \n')
-    # offload(todo_off)
-    # print('running load algorithm... \n')
-    # # u,weight,name = todo_on[0].split()
-    # # print(f"todo weight:{weight} name:{name}")
-    # load(todo_on)
 
+
+
+    
+
+def findGoal(): # sort and return
+    print( 'find goal')    
 
 def balance(grid):
     left, right = checkBalance()
@@ -208,6 +252,17 @@ def balance(grid):
             if (box.name != 'UNUSED' and box.name != 'NAN'):
                 myboxes.append(box)  # append containers to 1d
     arr1, arr2 = partition(myboxes)
+
+    weightArr1 = weightArr2 = 0
+    for each in arr1:
+        weightArr1 += each.weight
+
+    for each in arr2:
+        weightArr2 += each.weight
+
+    if not (min(weightArr1, weightArr2) / max(weightArr1, weightArr2) > 0.9):
+        SIFT()
+        return
     choice = chooseSide(arr1, arr2)
 
     if choice == 1:  # arr1 need go left, arr2 need go right
@@ -574,8 +629,8 @@ def AvailableSpot(x, y, grid):
             if validspot(j, i, grid) and y != i:  # not check self
                 d = getdistance(x, y, j, i)
                 spots.append([j, i, d])
-                print("Available spot: ")
-                print([j, i, d])
+                #print("Available spot: ")
+                #print([j, i, d])
                 break
             else:
                 continue
@@ -707,9 +762,12 @@ def creategrid(r):
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
             else:
-                b = Button(frame2, text=n, height=3, width=6, bg='blue', fg='white')
+                temp = n[:5]
+                if len(n) > 5:
+                    temp+="..."
+                b = Button(frame2, text=temp, height=3, width=6, bg='blue', fg='white')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
-                tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+                tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]" + "\nName: " + n  )
     # tip.bind_widget(my_button, balloonmsg="Python is an interpreted, high-level and general - purpose programming language")
 
 
@@ -788,7 +846,7 @@ if __name__ == '__main__':
 
     ship = []
     # change path below to target manifest location
-    path = r"./manifests/testBlue.txt"
+    path = r"./manifests/ShipCase5.txt"
     with open(path, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -840,18 +898,18 @@ if __name__ == '__main__':
             row.append(container(x + 1, y + 1, 0, "UNUSED"))
         buffer.append(row)
 
-    print(f'size: x: {len(data)} y: {len(data[0])}')
-    print(
-        "2 sets is ")
-    t1, t2 = partition(ship)
+    # print(f'size: x: {len(data)} y: {len(data[0])}')
+    # print(
+    #     "2 sets is ")
+    # t1, t2 = partition(ship)
 
     # t1 = 120
     # t2 = 40,50,35
     # for x in t1:
     #     print(f'here: {x.weight}')
 
-    choice = chooseSide(t2, t1)
-    print(f'choice: {choice}')
+    # choice = chooseSide(t2, t1)
+    # print(f'choice: {choice}')
     # for x in range(int(len(data))):
     #     for y in range(int(len(data[0]))):
     #         print(f'[{data[x][y].rowNum} , {data[x][y].colNum}] w: {data[x][y].weight} n: {data[x][y].name}')
@@ -891,6 +949,7 @@ if __name__ == '__main__':
             f.write(f"[{str(box.rowNum + 1).zfill(2)},{str(box.colNum + 1).zfill(2)}], {{{s}}}, {box.name}\n")
 
     f.close()
+
     ws = Tk()
     ws.title('179M')
     ws.geometry('1200x900')
