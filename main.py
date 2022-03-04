@@ -4,6 +4,7 @@ import csv
 import copy
 from glob import escape, glob
 from math import dist
+from os import remove
 import sys
 import time
 from operator import attrgetter
@@ -202,29 +203,127 @@ def task1():
 
 
 def SIFT():
+    global crane_x
+    global crane_y
+    global estimatedTime
+    global estimatedTimeEach
     print("running sift...")
     flatten_data = list(chain.from_iterable(data)) #make 2d list 1d
-    flatten_box = []
+    flatten_boxes = []
     leftNext = True # start load on left side first
-    colSize = len(data[0])/2 # ie 6
+    colSize = int(len(data[0])/2) # ie 6
     currentRow = 0
     offsetCol = 0 # offset, not actual colNum
 
 
     for each in flatten_data:# keep box, not unused, NAN
         if each.weight != 0:
-            flatten_box.append(each)
-    allBox = sorted(flatten_box, key=lambda x: x.weight, reverse=True) # sort weight heavy -> light
+            flatten_boxes.append(each)
+    allBox = sorted(flatten_boxes, key=lambda x: x.weight, reverse=True) # sort weight heavy -> light
 
+    for each in allBox:
+        print(f'allbox: {each.name}')
     while len(allBox) > 0 :  # large weight front, pop after done loop
-
-        for i in range (colSize):  
-            if leftNext :
-                col = MID_LINE - offsetCol # goal left
-            else:
-                col = MID_LINE + offsetCol + 1 #goal right
-            row = currentRow #goal col 
+        box = allBox[0]
+        print(f'\n\nworking on box: {box.name}')
         
+        if leftNext:
+            col = MID_LINE - offsetCol # goal left
+        else:
+            col = MID_LINE + offsetCol + 1 #goal right
+            offsetCol+=1
+        row = currentRow #goal col 
+        print(f'moving {box.name} to  {row} , {col}')
+        if data[row][col].name != 'NAN':
+            leftNext = not leftNext # switch turn between left and right
+            if data[row][col].name =='UNUSED': # goal spot is empty, just move
+                swapData(box.rowNum, box.colNum, row, col, data)
+                state = copy.deepcopy(data)
+                states.append(state)
+                tempTime = getdistance(crane_x, crane_y, 8,0) + getdistance(8,0,row, col)
+                estimatedTime += tempTime
+                estimatedTimeEach.append(tempTime)
+                mysequence.append("a")
+                
+            else: # goal spot has box, remove whole col
+                print(f'box at goal: {data[row][col].name} ')
+                removedNames,allBox = removeFromGoal(data[row][col],allBox)
+                
+                # for removed in removedNames:
+                #     for temprow in data:
+                #         for tempbox in temprow:
+                #             if removed == tempbox.name:
+                #                 for i in range(len(allBox)):
+                #                     if allBox[i].name == removed:
+                #                         allBox.pop(i)
+                #                         allBox.insert(i, tempbox)
+                                        
+                swapData(box.rowNum, box.colNum, row, col, data)
+                state = copy.deepcopy(data)
+                states.append(state)
+                tempTime = getdistance(crane_x, crane_y, 8,0) + getdistance(8,0,row, col)
+                estimatedTime += tempTime
+                estimatedTimeEach.append(tempTime)
+                mysequence.append("a")
+                
+        
+        
+
+        print_ship2(data)
+        
+        
+        allBox.pop(0)
+
+
+                
+def removeFromGoal(box,allBox):
+    global crane_x
+    global crane_y
+    global estimatedTime
+    global estimatedTimeEach
+    print('remove box and top from goal spot')
+    needMove = checkTop(data, box)
+    needMove.append(box)
+    print(len(needMove))
+    removedNames = []
+    for eachBox in needMove: # sorted from top -> bot
+        
+        removedNames.append(eachBox.name)
+        row, col, dist = nearspot(eachBox.rowNum, eachBox.colNum, data)
+        print(f'removing: {eachBox.name} to {row}, {col}')
+        tempname = eachBox.name
+        
+        for i in range(len(allBox)):
+            #print(f'aaaaaaaaaaaaa: {allBox[i].name} bbbbbbbb {tempname}')
+            if allBox[i].name == tempname:
+                print(f'aaaaaaaaaaaaa: {allBox[i].name} bbbbbbbb {tempname}')
+                #print('aaaaaaaaaaaaaaaaaaaaa')
+                
+                print(f'after {i} sssssss {allBox[i].name}')
+                for e in allBox:
+                    print(f'eee: {e.name}')
+                allBox.pop(i)
+                allBox.insert(i,data[row][col])
+                swapData(eachBox.rowNum, eachBox.colNum, row, col, data)
+
+                state = copy.deepcopy(data)
+                states.append(state)
+                tempTime = getdistance(crane_x, crane_y, 8,0) + getdistance(8,0,row, col)
+                estimatedTime += tempTime
+                estimatedTimeEach.append(tempTime)
+                mysequence.append("a")
+
+                for e in allBox:
+                    print(f'qqq: {e.name}')
+        
+                
+                
+
+
+    return removedNames,allBox
+        #need swap address in data
+        
+    
 
             
 
@@ -515,6 +614,7 @@ def swapData(row1, col1, row2, col2, grid):
     grid[row2][col2].weight, grid[row1][col1].weight = grid[row1][col1].weight, grid[row2][col2].weight
     grid[row2][col2].name, grid[row1][col1].name = grid[row1][col1].name, grid[row2][col2].name
     grid[row2][col2].target, grid[row1][col1].target = grid[row1][col1].target, grid[row2][col2].target
+    
 
 
 def findBox(grid, arr):
