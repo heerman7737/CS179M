@@ -650,6 +650,7 @@ def counter():
     global frame
     global ws
     global mysequence
+    global estimatedTime
     global estimatedTimeEach
     frame.destroy()
     frame = Frame(ws)
@@ -666,8 +667,8 @@ def counter():
     else:
         v = StringVar()
 
-        est = estimatedTimeEach[step]
-        v.set("Estimation Time: " + str(est) + " minutes")
+        estimatedTime -= estimatedTimeEach[step]
+        v.set("Estimation Time: " + str(estimatedTime) + " minutes")
 
         estimate_label = Label(frame, textvariable=v)
         # estimate_label.update_idletasks()
@@ -809,7 +810,7 @@ if __name__ == '__main__':
     print('moving sequence:\n')
     print(mysequence)
     print(f'estimated time: {estimatedTime}')
-    estimatedTimeEach.reverse()
+    # estimatedTimeEach.reverse()
 
     # for i in range(len(states)):
     #    print_ship2(states[i])
