@@ -314,28 +314,8 @@ def removeFromGoal(box,allBox):
                 crane_x = row
                 crane_y = col
 
-                # for e in allBox:
-                #     print(f'qqq: {e.name}')
-        
-                
-                
-
 
     return removedNames,allBox
-        #need swap address in data
-        
-            flatten_box.append(each)
-    allBox = sorted(flatten_box, key=lambda x: x.weight, reverse=True)  # sort weight heavy -> light
-
-    while len(allBox) > 0:  # large weight front, pop after done loop
-
-        for i in range(colSize):
-            if leftNext:
-                col = MID_LINE - offsetCol  # goal left
-            else:
-                col = MID_LINE + offsetCol + 1  # goal right
-            row = currentRow  # goal col
-
 
 def findGoal():  # sort and return
     print('find goal')
@@ -1130,38 +1110,12 @@ def UploadPage():
     upload_button = Button(uploadWindow, text='Choose File', command=lambda: open_file())
     upload_button.place(relx=0.5, rely=0.2, anchor=CENTER)
     load_button = Button(uploadWindow, text='Balance', command=balanceValidate)
-    load_button.place(relx=0.7, rely=0.2, anchor=CENTER)
-    # balance_button = Button(tkWindow, text='Offoad', command=validateUpload)
-    # balance_button.place(relx=0.7, rely=0.4, anchor=CENTER)
+    load_button.place(relx=0.4, rely=0.4, anchor=CENTER)
+    balance_button = Button(uploadWindow, text='Offoad/Onload', command=onloadOffloadValidate)
+    balance_button.place(relx=0.6, rely=0.4, anchor=CENTER)
     uploadWindow.mainloop()
 
 
-    filename = ""
-    decision = 0
-
-    tkWindow = Tk()
-    tkWindow.geometry('400x150')
-    tkWindow.title('Login Page')
-
-    # username label and text entry box
-    usernameLabel = Label(tkWindow, text="User Name")
-    usernameLabel.grid(row=0, column=0)
-    username = StringVar()
-    usernameEntry = Entry(tkWindow, textvariable=username)
-    usernameEntry.grid(row=0, column=1)
-    validateLogin = partial(validateLogin, username)
-    # login button
-    loginButton = Button(tkWindow, text="Login", command=validateLogin)
-    loginButton.grid(row=4, column=0)
-    tkWindow.mainloop()
-
-    # uploadWindow = Tk()
-
-
-
-    # #a = [3044,1100,2020,10000,2011,2007,2000]
-    # a =[9041,10001,500,600,100,10]
-    # n = len(a)
 
 
 def open_file():
@@ -1291,15 +1245,4 @@ if __name__ == '__main__':
 
     writeManifest() # finish cycle, write OUTBOUND manifest
 
-
-    ws = Tk()
-    ws.title('Balance Page')
-    ws.geometry('1200x900')
-    ws.config(bg='#F2B33D')
-    frame1 = Frame(ws)
-    frame2 = Frame(ws)
-    frame = Frame(ws)  # parent of frame4 and frame5
-    balancePageUI()
-
-    ws.mainloop()
 
