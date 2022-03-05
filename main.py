@@ -17,6 +17,7 @@ from main import *
 from itertools import chain
 from datetime import datetime
 import os
+
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
 MID_LINE = 5
@@ -68,6 +69,7 @@ def offload(box, isOnPort):  # move current box
         isOnPort = True
     else:  # not target, move to elsewhere
         nameLogBox = box.name
+
         row, col, dist = nearspot(box.rowNum, box.colNum, data)
         swapData(box.rowNum, box.colNum, row, col, data)
         state = copy.deepcopy(data)
@@ -199,22 +201,19 @@ def task1():
             if isTargetUnder:
                 needMove.append(newBox)
 
+
 def SIFT():
-    global crane_x
-    global crane_y
-    global estimatedTime
-    global estimatedTimeEach
     print("running sift...")
-    flatten_data = list(chain.from_iterable(data)) #make 2d list 1d
-    flatten_boxes = []
-    leftNext = True # start load on left side first
-    colSize = int(len(data[0])/2) # ie 6
+    flatten_data = list(chain.from_iterable(data))  # make 2d list 1d
+    flatten_box = []
+    leftNext = True  # start load on left side first
+    colSize = len(data[0]) / 2  # ie 6
     currentRow = 0
-    offsetCol = 0 # offset, not actual colNum
+    offsetCol = 0  # offset, not actual colNum
 
-
-    for each in flatten_data:# keep box, not unused, NAN
+    for each in flatten_data:  # keep box, not unused, NAN
         if each.weight != 0:
+
             flatten_boxes.append(each)
     allBox = sorted(flatten_boxes, key=lambda x: x.weight, reverse=True) # sort weight heavy -> light
 
@@ -325,9 +324,22 @@ def removeFromGoal(box,allBox):
     return removedNames,allBox
         #need swap address in data
         
+            flatten_box.append(each)
+    allBox = sorted(flatten_box, key=lambda x: x.weight, reverse=True)  # sort weight heavy -> light
 
-def findGoal(): # sort and return
-    print( 'find goal')    
+    while len(allBox) > 0:  # large weight front, pop after done loop
+
+        for i in range(colSize):
+            if leftNext:
+                col = MID_LINE - offsetCol  # goal left
+            else:
+                col = MID_LINE + offsetCol + 1  # goal right
+            row = currentRow  # goal col
+
+
+def findGoal():  # sort and return
+    print('find goal')
+
 
 def balance(grid):
     left, right = checkBalance()
@@ -804,11 +816,12 @@ def menu():
 
     if decision == 1:
         # print('task 1 load offload\n')
-        task1()
 
+        loadingUI()
     elif decision == 2:
         # print('task 2 balance\n')
         balance(data)
+        balancePageUI()
 
     else:
         print('unknown choice, exit')
@@ -839,7 +852,6 @@ def getGrid(r):
 
 
 def creategrid(r):
-    global ws
     arr = getGrid(r)
     tip = Balloon()
     for i in range(10):
@@ -902,10 +914,112 @@ def counter():
         step = step + 1
     creategrid(step)
 
+def loadingUI():
+    global loadws
+    loadws = Tk()
+    global append_boxes
+    append_boxes =[]
+    global f1, f2, f3
+    loadws.title('Loading Page')
+    loadws.geometry('1200x900')
+    loadws.config(bg='#F2B33D')
+    f1 = Frame(loadws)
+    f2 = Frame(loadws)
+    f3 = Frame(loadws)  
+    f1.pack(side=TOP, fill=X)
+    f2.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
+    f3.pack(side=LEFT, fill=Y, padx=10, pady=10)
+    #Button(f2, text="Name: ", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
+    #Button(f2, text="Weight", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
+    #Button(f2, text="F3Button", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
 
+    r=0
+    arrName = []
+    arrWeight = []
+    arrX = []
+    arrY = []
+    for i in range(9, -1, -1):
+        col1 = []
+        col2 = []
+        col3 = []
+        col4 = []
+        for j in range(12):
+            col1.append(states[r][i][j].name)
+            col2.append(states[r][i][j].weight)
+            col3.append(states[r][i][j].rowNum)
+            col4.append(states[r][i][j].colNum)
+
+        arrName.append(col1)
+        arrWeight.append(col2)
+        arrX.append(col3)
+        arrY.append(col4)
+    # print(arrName)
+    arr=arrName, arrWeight, arrX, arrY
+    #tip = Balloon(loadws)
+    #tip = Balloon(tkWindow)
+    for i in range(10):
+        for j in range(12):
+            n = arr[0][i][j]
+            w = arr[1][i][j]
+            x = arr[2][i][j]
+            y = arr[3][i][j]
+            if (n == 'NAN'):
+                b = Button(f3, text=n, height=3, width=6, bg='black', fg='white')
+                b.grid(row=i, column=j, ipadx=3, ipady=3)
+            #   tip.bind_widget(b, balloonmsg="weight: "+str(w)+"\nlocation: ["+str(x)+","+str(y)+"]")
+            elif (n == 'UNUSED'):
+                b = Button(f3, text=n, height=3, width=6, bg='white', fg='black')
+                b.grid(row=i, column=j, ipadx=3, ipady=3)
+            #    tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+            else:
+                b = Button(f3, text=n, height=3, width=6, bg='blue', fg='white')
+                b.grid(row=i, column=j, ipadx=3, ipady=3)
+            #    tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+    do_stuff()
+def do_stuff():
+    global nameEntry
+    global weightEntry
+    WeightLabel = Label(f2, text="Weight: ").grid(row=4, column=0)
+    weight = IntVar()
+    weightEntry = Entry(f2, textvariable=weight).grid(row=4, column=1) 
+    nameLabel = Label(f2, text="Name: ").grid(row=6, column=0)
+    name = StringVar()
+    nameEntry = Entry(f2, textvariable=name).grid(row=6, column=1) 
+    onloadfunction = partial(onloadfunc, weight, name) 
+    offload_button = Button(f2,  text ='offload')
+    offload_button.place(relx=0.1, rely=0.1, anchor=CENTER)
+    onload_button = Button(f2,  text ='onload', command=onloadfunction)
+    onload_button.place(relx=0.3, rely=0.1, anchor=CENTER)
+    confirm_button = Button(f2,  text ='confirm', command=confirmfunc)
+    confirm_button.place(relx=0.5, rely=0.1, anchor=CENTER)
+   # clear_button = Button(f2,  text ='clear')
+   # clear_button.place(relx=0.7, rely=0.1, anchor=CENTER, command=clearfunc)
+    loadws.mainloop()
+
+def onloadfunc(weight, name):
+ 
+    print("name entered :", name.get())
+    print("weight entered: ", weight.get())
+    append_boxes.append([2,weight.get(),name.get()])
+    print (append_boxes)
+    do_stuff()
+def confirmfunc():
+    #load(append_boxes)
+    task1()
 def balancePageUI():
 
+    global ws
+    ws = Tk()
     global frame, frame1, frame2, estimatedTime
+
+    ws.title('Balance Page')
+    ws.geometry('1200x900')
+    ws.config(bg='#F2B33D')
+    frame1 = Frame(ws)
+    frame2 = Frame(ws)
+    frame = Frame(ws)  # parent of frame4 and frame5
+    #balancePageUI()
+
 
     frame1.pack(side=TOP, fill=X)
 
@@ -930,6 +1044,57 @@ def balancePageUI():
     creategrid(0)
     # estimate_label.destroy()
     frame.pack(expand=True)
+    ws.mainloop()
+
+
+def validateLogin(username):
+    print("username entered :", username.get())
+    if username.get() != '':
+        tkWindow.destroy()
+        UploadPage()
+    return
+
+
+def balanceValidate():
+    uploadWindow.destroy()
+    # balancePageUI()
+    global decision
+    decision = 2
+
+
+def onloadOffloadValidate():
+    uploadWindow.destroy()
+    
+    global decision
+    decision = 1
+
+def UploadPage():
+    global uploadWindow
+    uploadWindow = Tk()
+    uploadWindow.geometry('800x300')
+    uploadWindow.title('Upload Page')
+    upload_label = Label(uploadWindow, text="Upload a manifest:")
+    upload_label.place(relx=0.5, rely=0.1, anchor=CENTER)
+    upload_button = Button(uploadWindow, text='Choose File', command=lambda: open_file())
+    upload_button.place(relx=0.5, rely=0.2, anchor=CENTER)
+    load_button = Button(uploadWindow, text='Balance', command=balanceValidate)
+    load_button.place(relx=0.4, rely=0.4, anchor=CENTER)
+    balance_button = Button(uploadWindow, text='Offoad/Onload', command=onloadOffloadValidate)
+    balance_button.place(relx=0.6, rely=0.4, anchor=CENTER)
+    uploadWindow.mainloop()
+
+
+
+
+def open_file():
+    # file_path = askopenfile(mode='r', filetypes=[("Txt Files", "*txt")])
+    global uploadWindow
+    global filename
+    filename = filedialog.askopenfilename()
+    print('Selected:', filename)
+    file_label = Label(uploadWindow, text=filename)
+    file_label.place(relx=0.7, rely=0.1, anchor=CENTER)
+
 
 
 
@@ -971,6 +1136,32 @@ def UploadPage():
     uploadWindow.mainloop()
 
 
+    filename = ""
+    decision = 0
+
+    tkWindow = Tk()
+    tkWindow.geometry('400x150')
+    tkWindow.title('Login Page')
+
+    # username label and text entry box
+    usernameLabel = Label(tkWindow, text="User Name")
+    usernameLabel.grid(row=0, column=0)
+    username = StringVar()
+    usernameEntry = Entry(tkWindow, textvariable=username)
+    usernameEntry.grid(row=0, column=1)
+    validateLogin = partial(validateLogin, username)
+    # login button
+    loginButton = Button(tkWindow, text="Login", command=validateLogin)
+    loginButton.grid(row=4, column=0)
+    tkWindow.mainloop()
+
+    # uploadWindow = Tk()
+
+
+
+    # #a = [3044,1100,2020,10000,2011,2007,2000]
+    # a =[9041,10001,500,600,100,10]
+    # n = len(a)
 
 
 def open_file():
@@ -981,6 +1172,7 @@ def open_file():
     print('Selected:', filename)
     file_label = Label(uploadWindow, text=filename)
     file_label.place(relx=0.7, rely=0.1, anchor=CENTER)
+
 
 
 def writeLog(message):
@@ -1099,6 +1291,7 @@ if __name__ == '__main__':
 
     writeManifest() # finish cycle, write OUTBOUND manifest
 
+
     ws = Tk()
     ws.title('Balance Page')
     ws.geometry('1200x900')
@@ -1109,3 +1302,4 @@ if __name__ == '__main__':
     balancePageUI()
 
     ws.mainloop()
+
