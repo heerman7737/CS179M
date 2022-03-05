@@ -3,6 +3,7 @@ from cmath import log10
 import csv
 import copy
 from glob import escape, glob
+import imp
 from math import dist
 import sys
 import time
@@ -14,6 +15,8 @@ from tkinter.tix import *
 from turtle import ondrag
 from main import *
 from itertools import chain
+from datetime import datetime
+import os
 
 # SHIPGOAL = [9,1]
 # BUFFERGOAL = [4,24]
@@ -45,12 +48,14 @@ def offload(box, isOnPort):  # move current box
     print('unload all needed containers first')
 
     if box.target == True:  # is my target, unload to pink
+        nameLogBox = box.name
         box.weight = 0
         box.name = 'UNUSED'  # delete box
         box.target = False
         state = copy.deepcopy(data)
         states.append(state)
         mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1}] to [9,1](pink)')
+        writeLog(f'"{nameLogBox}" is offloaded')
 
         tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum, 8, 0)
         # print('ttttttttttttttttttttttt')
@@ -63,13 +68,14 @@ def offload(box, isOnPort):  # move current box
         crane_y = 0
         isOnPort = True
     else:  # not target, move to elsewhere
+        nameLogBox = box.name
 
         row, col, dist = nearspot(box.rowNum, box.colNum, data)
         swapData(box.rowNum, box.colNum, row, col, data)
         state = copy.deepcopy(data)
         states.append(state)
         mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-
+        writeLog(f'"{nameLogBox}" is moved to ship: [{row},{col}]')
         tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum, row, col)
         if isOnPort:
             tempTime += 2
@@ -98,6 +104,7 @@ def load(todo_on, isOnPort):  # 2
     state = copy.deepcopy(data)
     states.append(state)
     mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
+    writeLog(f'"{name}" is onloaded to ship: [{row},{col}]')
 
     tempTime = getdistance(crane_x, crane_y, 8, 0) + getdistance(8, 0, row, col)
     if isOnPort:
@@ -206,6 +213,117 @@ def SIFT():
 
     for each in flatten_data:  # keep box, not unused, NAN
         if each.weight != 0:
+
+            flatten_boxes.append(each)
+    allBox = sorted(flatten_boxes, key=lambda x: x.weight, reverse=True) # sort weight heavy -> light
+
+    for each in allBox:
+        print(f'allbox: {each.name}')
+    while len(allBox) > 0 :  # large weight front, pop after done loop
+        box = allBox[0]
+        #print(f'\n\nworking on box: {box.name}')
+        
+        if leftNext:
+            col = MID_LINE - offsetCol # goal left
+        else:
+            col = MID_LINE + offsetCol + 1 #goal right
+            offsetCol+=1
+        row = currentRow #goal col 
+        print(f'moving {box.name} to  {row} , {col}')
+        if data[row][col].name != 'NAN':
+            leftNext = not leftNext # switch turn between left and right
+            if data[row][col].name =='UNUSED': # goal spot is empty, just move
+                nameLogBox = box.name
+                swapData(box.rowNum, box.colNum, row, col, data)
+                state = copy.deepcopy(data)
+                states.append(state)
+                tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,row, col)
+                estimatedTime += tempTime
+                estimatedTimeEach.append(tempTime)
+                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}] ')
+                writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                crane_x = row
+                crane_y = col
+                
+            else: # goal spot has box, remove whole col
+                #print(f'box at goal: {data[row][col].name} ')
+                removedNames,allBox = removeFromGoal(data[row][col],allBox)
+                nameLogBox = box.name                        
+                swapData(box.rowNum, box.colNum, row, col, data)
+                state = copy.deepcopy(data)
+                states.append(state)
+                tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,row, col)
+                estimatedTime += tempTime
+                estimatedTimeEach.append(tempTime)
+                mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}] ')
+                writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                crane_x = row
+                crane_y = col
+                
+        
+        
+
+        print_ship2(data)
+        
+        
+        allBox.pop(0)
+
+
+                
+def removeFromGoal(box,allBox):
+    global crane_x
+    global crane_y
+    global estimatedTime
+    global estimatedTimeEach
+    print('remove box and top from goal spot')
+    needMove = checkTop(data, box)
+    needMove.append(box)
+    print(len(needMove))
+    removedNames = []
+    for eachBox in needMove: # sorted from top -> bot
+        
+        removedNames.append(eachBox.name)
+        row, col, dist = nearspot(eachBox.rowNum, eachBox.colNum, data)
+        print(f'removing: {eachBox.name} to {row}, {col}')
+        tempname = eachBox.name
+        
+        for i in range(len(allBox)):
+            #print(f'aaaaaaaaaaaaa: {allBox[i].name} bbbbbbbb {tempname}')
+            if allBox[i].name == tempname:
+                # print(f'aaaaaaaaaaaaa: {allBox[i].name} bbbbbbbb {tempname}')
+                # #print('aaaaaaaaaaaaaaaaaaaaa')
+                
+                # print(f'after {i} sssssss {allBox[i].name}')
+                # for e in allBox:
+                #     print(f'eee: {e.name}')
+                tempTime = getdistance(crane_x, crane_y, eachBox.rowNum, eachBox.colNum) + getdistance(eachBox.rowNum, eachBox.colNum,row, col)
+                
+                allBox.pop(i)
+                allBox.insert(i,data[row][col])
+                nameLogBox = eachBox.name
+                swapData(eachBox.rowNum, eachBox.colNum, row, col, data)
+
+                state = copy.deepcopy(data)
+                states.append(state)
+                
+                estimatedTime += tempTime
+                estimatedTimeEach.append(tempTime)
+                mysequence.append(f'Move: [{eachBox.rowNum + 1},{eachBox.colNum + 1}] to [{row + 1},{col + 1}] ')
+                writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                
+                crane_x = row
+                crane_y = col
+
+                # for e in allBox:
+                #     print(f'qqq: {e.name}')
+        
+                
+                
+
+
+    return removedNames,allBox
+        #need swap address in data
+        
             flatten_box.append(each)
     allBox = sorted(flatten_box, key=lambda x: x.weight, reverse=True)  # sort weight heavy -> light
 
@@ -300,6 +418,7 @@ def balance(grid):
 
     # print(f'needmove: {needmove[0].name}')
     BalanceBoxes(needmove)
+
 
 
 def removeMin(goLeft, goRight):
@@ -400,6 +519,8 @@ def BalanceBoxes(arr):
                 print(f'right to right: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                writeLog(f'"{box.name}" is moved to [{row},{col}]')
+
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -421,6 +542,7 @@ def BalanceBoxes(arr):
                 print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col} dist:{dist}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                writeLog(f'"{box.name}" is moved to [{row},{col}]')
 
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
@@ -443,6 +565,7 @@ def BalanceBoxes(arr):
                 print(f'left to right: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col} dist:{dist}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                writeLog(f'"{box.name}" is moved to [{row},{col}]')
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -462,6 +585,7 @@ def BalanceBoxes(arr):
                 print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
+                writeLog(f'"{box.name}" is moved to [{row},{col}]')
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -692,7 +816,7 @@ def menu():
 
     if decision == 1:
         # print('task 1 load offload\n')
-        #task1()
+
         loadingUI()
     elif decision == 2:
         # print('task 2 balance\n')
@@ -883,6 +1007,7 @@ def confirmfunc():
     #load(append_boxes)
     task1()
 def balancePageUI():
+
     global ws
     ws = Tk()
     global frame, frame1, frame2, estimatedTime
@@ -894,6 +1019,7 @@ def balancePageUI():
     frame2 = Frame(ws)
     frame = Frame(ws)  # parent of frame4 and frame5
     #balancePageUI()
+
 
     frame1.pack(side=TOP, fill=X)
 
@@ -970,7 +1096,45 @@ def open_file():
     file_label.place(relx=0.7, rely=0.1, anchor=CENTER)
 
 
-if __name__ == '__main__':
+
+
+def validateLogin(username):
+    print("username entered :", username.get())
+    if username.get() != '':
+        writeLog(f'{username.get()} signed in')
+        tkWindow.destroy()
+        UploadPage()
+    return
+
+
+def balanceValidate():
+    uploadWindow.destroy()
+    # balancePageUI()
+    global decision
+    decision = 2
+
+
+def onloadOffloadValidate():
+    uploadWindow.destroy()
+    # balancePageUI()
+    global decision
+    decision = 1
+
+def UploadPage():
+    global uploadWindow
+    uploadWindow = Tk()
+    uploadWindow.geometry('800x300')
+    uploadWindow.title('Upload Page')
+    upload_label = Label(uploadWindow, text="Upload a manifest:")
+    upload_label.place(relx=0.5, rely=0.1, anchor=CENTER)
+    upload_button = Button(uploadWindow, text='Choose File', command=lambda: open_file())
+    upload_button.place(relx=0.5, rely=0.2, anchor=CENTER)
+    load_button = Button(uploadWindow, text='Balance', command=balanceValidate)
+    load_button.place(relx=0.7, rely=0.2, anchor=CENTER)
+    # balance_button = Button(tkWindow, text='Offoad', command=validateUpload)
+    # balance_button.place(relx=0.7, rely=0.4, anchor=CENTER)
+    uploadWindow.mainloop()
+
 
     filename = ""
     decision = 0
@@ -999,16 +1163,49 @@ if __name__ == '__main__':
     # a =[9041,10001,500,600,100,10]
     # n = len(a)
 
-    # print(
-    #   "2 sets is ", select(a, 0, sum(a)/2))
 
-    ship = []
-    # change path below to target manifest location
+def open_file():
+    # file_path = askopenfile(mode='r', filetypes=[("Txt Files", "*txt")])
+    global uploadWindow
+    global filename
+    filename = filedialog.askopenfilename()
+    print('Selected:', filename)
+    file_label = Label(uploadWindow, text=filename)
+    file_label.place(relx=0.7, rely=0.1, anchor=CENTER)
 
-    path = filename
-    # print("path:" + path)
 
-    with open(path, newline='') as csvfile:
+
+def writeLog(message):
+    curDateTime = datetime.now()
+    dateTime = curDateTime.strftime("%m/%d/%Y: %H:%M:%S: ")
+    f = open("logs.txt", "a")
+    
+    f.write(dateTime)
+    f.write(message)
+
+    f.write('\n')
+
+    f.close()
+
+    print("date and time:", dateTime)
+
+def writeManifest():
+    global tail
+    filenameOUTBOUND = tail[:-4] + 'OUTBOUND' + tail[-4:]
+    desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+    f = open(desktop+ '\\' + filenameOUTBOUND, "w")
+    for row in data[:-2]:
+        for box in row:
+            s = str(box.weight).zfill(5)
+            f.write(f"[{str(box.rowNum + 1).zfill(2)},{str(box.colNum + 1).zfill(2)}], {{{s}}}, {box.name}\n")
+
+    f.close()
+    writeLog(f'Finished a cycle. Manifest "{filenameOUTBOUND}" was written to desktop, and reminder message to operator to send file was displayed')
+
+def readManifest():
+    global tail
+    containerCounter = 0
+    with open(filename, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in spamreader:
@@ -1019,27 +1216,12 @@ if __name__ == '__main__':
                 weight = (row[2].split())[0][1:6]
                 name = (",".join(row[3:]))
                 name = name[1:]
+                if name != 'UNUSED' and name != 'NAN':
+                    containerCounter+=1
                 ship.append(container(x, y, weight, name))
-                # print(f'cord: ( {x}, {y} ) weight: {weight} name: {name} ')
-    # print(f'size: x: {len(ship)} y: {len(ship[0])}')
-    # print(ship[95].name)
-    # print(f"size: {len(ship)}\n")
+    writeLog(f'Manifest "{tail}" is opened, there are {containerCounter} containers on the ship')
 
-    # col = index % 12
-    # row = index // 8
-
-    # global var here
-    data = []  # 10x12 ship 2d grid
-    buffer = []  # 4x24 buffer zone 2d grid
-    todo = []  # load/offload todo list
-    mysequence = []  # give instruction to operator to move
-    states = []
-    step = 0
-    estimatedTime = 0
-    estimatedTimeEach = []
-    crane_x = 9
-    crane_y = 1
-
+def makeGrid():
     for x in range(8):  # store manifest to ship grid 8x12
         row = []
         for y in range(12):
@@ -1059,56 +1241,65 @@ if __name__ == '__main__':
             row.append(container(x + 1, y + 1, 0, "UNUSED"))
         buffer.append(row)
 
-    # print(f'size: x: {len(data)} y: {len(data[0])}')
-    # print(
-    #     "2 sets is ")
-    # t1, t2 = partition(ship)
+if __name__ == '__main__':
 
-    # t1 = 120
-    # t2 = 40,50,35
-    # for x in t1:
-    #     print(f'here: {x.weight}')
+    writeLog('Program opened')
 
-    # choice = chooseSide(t2, t1)
-    # print(f'choice: {choice}')
-    # for x in range(int(len(data))):
-    #     for y in range(int(len(data[0]))):
-    #         print(f'[{data[x][y].rowNum} , {data[x][y].colNum}] w: {data[x][y].weight} n: {data[x][y].name}')
-    # print_ship2()
-    # d = []
-    # indexx=0
-    # indexy=6
-    # #d =findAvailableSpot(indexx ,indexy,data)
-    # spot = nearspot(indexx, indexy,data)
+    # global var here
+    ship = [] # 1d list of 96 containers objects
+    data = []  # 10x12 ship 2d grid
+    buffer = []  # 4x24 buffer zone 2d grid
+    todo = []  # load/offload todo list
+    mysequence = []  # give instruction to operator to move
+    states = [] # each grid to display
+    step = 0
+    estimatedTime = 0
+    estimatedTimeEach = []
+    crane_x = 8
+    crane_y = 0
+    filename = ""
+    decision = 0 # 1 = load/offload, 2 = balance
 
-    # print(f'cord: {spot[0]},{spot[1]} dist: {spot[2]}')
-    # print(f"name: {data[indexx][indexy].name}\n")
 
-    # temp =data[indexx][indexy]
-    # data[indexx][indexy] = data[d[0]][d[1]]
-    # data[d[0]][d[1]] = data[indexx][indexy]
-    # print(f'manifest_ cord {d[0]+1}, {d[1]+1} \n')
-    # tempGrid = [row[:6] for row in data]
-    # tempGrid = data[:-2]
-    # tr,tc,d = nearspot(8,-1,tempGrid)
-    # print(f'near: {tr} , {tc} dist:{d}')
-    print_ship2(data)
-    menu()  # display main menu, input choice
+    tkWindow = Tk()
+    tkWindow.geometry('400x150')
+    tkWindow.title('Login Page')
+
+    # username label and text entry box
+    usernameLabel = Label(tkWindow, text="User Name")
+    usernameLabel.grid(row=0, column=0)
+    username = StringVar()
+    usernameEntry = Entry(tkWindow, textvariable=username)
+    usernameEntry.grid(row=0, column=1)
+    validateLogin = partial(validateLogin, username)
+    # login button
+    loginButton = Button(tkWindow, text="Login", command=validateLogin)
+    loginButton.grid(row=4, column=0)
+    tkWindow.mainloop()
+
+
+
+    head, tail = os.path.split(filename)
+    readManifest()
+    makeGrid() # construct data[][] buffer[][]
+
+    menu()  # display BACKEND main menu, input choice
     print('moving sequence:\n')
     print(mysequence)
     print(f'estimated time: {estimatedTime}')
     print_ship2(data)
-    # estimatedTimeEach.reverse()
 
-    # for i in range(len(states)):
-    #    print_ship2(states[i])
+    writeManifest() # finish cycle, write OUTBOUND manifest
 
-    f = open("demofile2.txt", "w")
-    for row in data[:-2]:
-        for box in row:
-            s = str(box.weight).zfill(5)
-            f.write(f"[{str(box.rowNum + 1).zfill(2)},{str(box.colNum + 1).zfill(2)}], {{{s}}}, {box.name}\n")
 
-    f.close()
+    ws = Tk()
+    ws.title('Balance Page')
+    ws.geometry('1200x900')
+    ws.config(bg='#F2B33D')
+    frame1 = Frame(ws)
+    frame2 = Frame(ws)
+    frame = Frame(ws)  # parent of frame4 and frame5
+    balancePageUI()
 
+    ws.mainloop()
 
