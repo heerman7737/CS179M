@@ -1,25 +1,19 @@
-from ast import Constant
-from cmath import log10
+
+from cmath import tau
 import csv
 import copy
-from glob import escape, glob
-import imp
-#from math import dist
-import sys
-import time
+
 from operator import attrgetter
 from functools import partial
 from tkinter import filedialog
 from tkinter import *
-#from tkinter.tix import *
+from tkinter.tix import *
 from turtle import ondrag
-from main import *
+
 from itertools import chain
 from datetime import datetime
 import os
 
-# SHIPGOAL = [9,1]
-# BUFFERGOAL = [4,24]
 MID_LINE = 5
 
 
@@ -162,18 +156,7 @@ def task1():
     todo_on = append_boxes
     print("Onload list: ", todo_on)
     print("Offload list: ", todo_off)
-    # off x y are coord of box need unload
-    # on: x is weight, y is name
-    """
-    while userinput != "confirm":
 
-        if userinput[0] == '1':
-            todo_off.append(userinput)
-        elif userinput[0] == '2':
-            todo_on.append(userinput)
-
-        userinput = input("input option as: 1/2 , x, y")
-    """
     BoxToOffload = []
     for i in range(len(todo_off)):  # parse input and link box in data
 
@@ -214,9 +197,12 @@ def task1():
 
 
 def SIFT():
+    global crane_x
+    global crane_y
+    global estimatedTime
     print("running sift...")
     flatten_data = list(chain.from_iterable(data))  # make 2d list 1d
-    flatten_box = []
+    flatten_boxes = []
     leftNext = True  # start load on left side first
     colSize = len(data[0]) / 2  # ie 6
     currentRow = 0
@@ -301,12 +287,7 @@ def removeFromGoal(box,allBox):
         for i in range(len(allBox)):
             #print(f'aaaaaaaaaaaaa: {allBox[i].name} bbbbbbbb {tempname}')
             if allBox[i].name == tempname:
-                # print(f'aaaaaaaaaaaaa: {allBox[i].name} bbbbbbbb {tempname}')
-                # #print('aaaaaaaaaaaaaaaaaaaaa')
-                
-                # print(f'after {i} sssssss {allBox[i].name}')
-                # for e in allBox:
-                #     print(f'eee: {e.name}')
+
                 tempTime = getdistance(crane_x, crane_y, eachBox.rowNum, eachBox.colNum) + getdistance(eachBox.rowNum, eachBox.colNum,row, col)
                 
                 allBox.pop(i)
@@ -591,23 +572,6 @@ def BalanceBoxes(arr):
         needMove.remove(box)
 
 
-# def BalanceBoxes(arr):
-#     targetBoxes = arr
-#     while len(targetBoxes) > 0:  # pop after move
-#         print("need write this ")
-
-#         needMove = findBox(data, targetBoxes)
-
-#         for i in needMove:
-#             print(f'name: {i.name}')
-#         mytarget = needMove[len(needMove) - 1]
-#         # print(f'targetaaaaaaaaaaaaaaaaaa: {len(needMove)}')
-#         if len(needMove) <= 0:
-#             print('balance box index <=0')
-
-#         for box in needMove:  # box in arr + others on top
-
-#         targetBoxes.remove(mytarget)
 
 
 def swapData(row1, col1, row2, col2, grid):
@@ -804,7 +768,7 @@ def checkBalance():
 
 def menu():
     # choice = int(input("1. Load/offload \n2. Balance\n"))
-
+    global tail
     if decision == 1:
         # print('task 1 load offload\n')
 
@@ -812,7 +776,7 @@ def menu():
     elif decision == 2:
         # print('task 2 balance\n')
         balance(data)
-        balancePageUI("Balance Page")
+        balancePageUI("Balance Page. Manifest: "+ tail)
 
     else:
         print('unknown choice, exit')
@@ -899,6 +863,20 @@ def createBuffer(frame):
             #     b.grid(row=i, column=j, ipadx=3, ipady=3)
             #     tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(
             #         y) + "]" + "\nName: " + n)
+def anotherManifest():
+    frame.destroy()
+    global filename
+    global data
+    global ship
+    global mysequence
+    global states
+    filename=''
+    data.clear()
+    ship.clear()
+    mysequence.clear()
+    states.clear()
+    UploadPage()
+
 def counter():
     global step
     global frame
@@ -906,6 +884,7 @@ def counter():
     global mysequence
     global estimatedTime
     global estimatedTimeEach
+
     frame.destroy()
     frame = Frame(ws)
     frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
@@ -914,27 +893,46 @@ def counter():
     # print("here"+str(estimatedTimeEach))
     if len(states) - 1 == step:
 
-        done_label = Label(frame, text="Congrats! Job is Done!\nNew manifest is saved")
+        done_label = Label(frame, text="Congrats! Job is Done!\nNew manifest is saved", font=("Arial", 16))
         # done_label.place(relx=2, rely=2, anchor='ne')
         done_label.pack(ipadx=10, ipady=10)
+        
+        Button(frame, text="Choose another manifest", command=anotherManifest).pack(ipadx=3, ipady=3)
+        
     else:
         v = StringVar()
 
         estimatedTime -= estimatedTimeEach[step]
         v.set("Estimation Time: " + str(estimatedTime) + " minutes")
 
-        estimate_label = Label(frame, textvariable=v)
+        estimate_label = Label(frame, textvariable=v, font=("Arial", 16))
         # estimate_label.update_idletasks()
         estimate_label.pack(ipadx=20, ipady=20)
         seq = mysequence[step]
-        seq_label = Label(frame, text=seq)
+        seq_label = Label(frame, text=seq, font=("Arial", 16))
         seq_label.pack(ipadx=10, ipady=10)
+        commentLabel = Label(frame, text="Comment: ")
+        commentLabel.pack(ipadx=3, ipady=3)
+        commentLabel.place(x = 100,y = 180,  anchor = NW)
+        commentLog = StringVar()
+
+        commentEntry = Text(frame,height = 3,width = 20)
+        commentEntry.pack(ipadx=100, ipady=10)
+        
+        writeComment = partial(addComment,commentEntry)
+        Button(frame, text="Save Comment",  command=writeComment).pack(ipadx=3, ipady=3)
+        
+        quit_loadv =partial(quit_load, ws ,2)
+        Button(frame,  text ='Switch User', command=quit_loadv).place(x=580, y=4)
+        #Button.place(x=25, y=100)
+        nameLabel = Label(frame, text= USERNAME).place(x=520, y=4)
 
         step = step + 1
     creategrid(step)
 
 def loadingUI():
     global loadws
+    global tail
     global step
     loadws = Tk()
     global delete_boxes
@@ -942,7 +940,7 @@ def loadingUI():
     append_boxes =[]
     delete_boxes =[]
     global f1, f2, f3,f4,f5,f6
-    loadws.title('Loading Page')
+    loadws.title('On/Off load Page. Manifest: '+ tail)
     loadws.geometry('1450x1100')
     loadws.config(bg='#F2B33D')
     f2 = Frame(loadws)
@@ -1069,20 +1067,21 @@ def do_stuff(): # call offload, onload, confirm buttons.
    # clear_button.place(relx=0.7, rely=0.1, anchor=CENTER, command=clearfunc)
     loadws.mainloop()
 
-def addComment(com,title,commentEntry):
+def addComment(commentEntry):
     #print("name entered :", com.get())
-    ss= com.get()
+    ss= commentEntry.get(1.0, "end-1c")
     writeLog('comment: '+ss)
-    commentEntry.delete(0, "end")
+    commentEntry.delete('1.0', END)
     
 
 def quit_load(page,option):
+    global tail
     page.destroy()
     logIn()
     if option ==1:
         loadingUI()
     else:
-        balancePageUI("Balance Page")
+        balancePageUI("Balance Page. Manifest: "+ tail)
 
 
 
@@ -1105,9 +1104,10 @@ def onloadfunc(weight, name):
 def confirmfunc():
     #load(append_boxes)
     global loadws
+    global tail
     loadws.destroy()
     task1()
-    balancePageUI("On/Off load Page")
+    balancePageUI("On/Off load Page. Manifest: "+ tail)
     
 def balancePageUI(title):
 
@@ -1143,16 +1143,18 @@ def balancePageUI(title):
     # frame4 = Frame(frame, bd=1, relief='solid')
     # frame4.grid(sticky='nsew', padx=5, pady=5)
     Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
-    estimate_label = Label(frame, text="Estimation Time: " + str(estimatedTime) + " minutes")
+    estimate_label = Label(frame, text="Estimation Time: " + str(estimatedTime) + " minutes" , font=("Arial", 16))
     estimate_label.pack(ipadx=20, ipady=20)
 
-    commentLabel = Label(frame, text="Comment: ").pack(ipadx=3, ipady=3)
+    commentLabel = Label(frame, text="Comment: ")
+    commentLabel.pack(ipadx=3, ipady=3)
+    commentLabel.place(x = 100,y = 130,  anchor = NW)
     commentLog = StringVar()
 
-    commentEntry = Entry(frame, textvariable=commentLog)
-    commentEntry.pack(ipadx=3, ipady=3)
+    commentEntry = Text(frame,height = 3,width = 20)
+    commentEntry.pack(ipadx=100, ipady=10)
     
-    writeComment = partial(addComment,commentLog,title,commentEntry)
+    writeComment = partial(addComment,commentEntry)
     Button(frame, text="Save Comment",  command=writeComment).pack(ipadx=3, ipady=3)
     
     quit_loadv =partial(quit_load, ws ,2)
@@ -1166,26 +1168,13 @@ def balancePageUI(title):
     ws.mainloop()
 
 
-def validateLogin(username):
-    print("username entered :", username.get())
-    if username.get() != '':
-        tkWindow.destroy()
-        #UploadPage()
-    return
 
 
-def balanceValidate():
-    uploadWindow.destroy()
-    # balancePageUI()
-    global decision
-    decision = 2
 
 
-def onloadOffloadValidate():
-    uploadWindow.destroy()
-    
-    global decision
-    decision = 1
+
+
+
 
 def UploadPage():
     global uploadWindow
@@ -1219,28 +1208,32 @@ def open_file():
 
 def validateLogin(username):
     global USERNAME
+    global islogin
     print("username entered :", username.get())
     if username.get() != '':
         USERNAME = username.get()
         writeLog(f'{username.get()} signed in')
         tkWindow.destroy()
+        islogin = True
         #UploadPage()
         
     return
 
 
 def balanceValidate():
-    uploadWindow.destroy()
-    # balancePageUI()
+    global filename
     global decision
-    decision = 2
+    if len(filename) > 3:
+        uploadWindow.destroy()
+        decision = 2
 
 
 def onloadOffloadValidate():
-    uploadWindow.destroy()
-    # balancePageUI()
+    global filename
     global decision
-    decision = 1
+    if len(filename) > 3:
+        uploadWindow.destroy()
+        decision = 1
 
 def UploadPage():
     global uploadWindow
@@ -1300,6 +1293,7 @@ def writeManifest():
 
 def readManifest():
     global tail
+    head, tail = os.path.split(filename)
     containerCounter = 0
     with open(filename, newline='') as csvfile:
         # read manifest and clean useless symbols, store to array of object"container"
@@ -1362,6 +1356,7 @@ if __name__ == '__main__':
 
     # global var here
     USERNAME = ''
+    islogin = False
     ship = [] # 1d list of 96 containers objects
     data = []  # 10x12 ship 2d grid
     buffer = []  # 4x24 buffer zone 2d grid
@@ -1376,7 +1371,10 @@ if __name__ == '__main__':
     filename = ""
     decision = 0 # 1 = load/offload, 2 = balance
     logIn()
-    UploadPage()
+    if islogin:
+        UploadPage()
+    else:
+        exit(1)
  
 
 
