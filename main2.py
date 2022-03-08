@@ -13,6 +13,7 @@ from turtle import ondrag
 from itertools import chain
 from datetime import datetime
 import os
+from types import FrameType
 
 MID_LINE = 5
 
@@ -864,12 +865,16 @@ def createBuffer(frame):
             #     tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(
             #         y) + "]" + "\nName: " + n)
 def anotherManifest():
-    frame.destroy()
+    global frame
+    global ws
+    ws.destroy()
     global filename
     global data
     global ship
     global mysequence
     global states
+    global step
+    step = 0
     filename=''
     data.clear()
     ship.clear()
@@ -877,7 +882,8 @@ def anotherManifest():
     states.clear()
     UploadPage()
 
-def counter():
+def counter(direction):
+    
     global step
     global frame
     global ws
@@ -888,11 +894,17 @@ def counter():
     frame.destroy()
     frame = Frame(ws)
     frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
-    Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
+    counterNext  = partial(counter, 1)
+    b1 = Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counterNext)
+    b1.pack(ipadx=3, ipady=3)
+    counterBack  = partial(counter, 0)
+    b2 = Button(frame, text="Back", height=3, width=6, bg='white', fg='black', command=counterBack)
+    b2.pack(ipadx=4, ipady=4)
+    b2.place(x = 250,y = 1)
 
     # print("here"+str(estimatedTimeEach))
     if len(states) - 1 == step:
-
+        writeManifest() # finish cycle, write OUTBOUND manifest
         done_label = Label(frame, text="Congrats! Job is Done!\nNew manifest is saved", font=("Arial", 16))
         # done_label.place(relx=2, rely=2, anchor='ne')
         done_label.pack(ipadx=10, ipady=10)
@@ -901,14 +913,21 @@ def counter():
         
     else:
         v = StringVar()
-
-        estimatedTime -= estimatedTimeEach[step]
+        
+        if direction == 1 : #next
+            seq = mysequence[step]
+            estimatedTime -= estimatedTimeEach[step]
+            step = step + 1
+        elif direction == 0 and step > 0:
+            seq = mysequence[step-1]
+            estimatedTime += estimatedTimeEach[step-1]
+            step = step - 1
         v.set("Estimation Time: " + str(estimatedTime) + " minutes")
 
         estimate_label = Label(frame, textvariable=v, font=("Arial", 16))
         # estimate_label.update_idletasks()
         estimate_label.pack(ipadx=20, ipady=20)
-        seq = mysequence[step]
+        
         seq_label = Label(frame, text=seq, font=("Arial", 16))
         seq_label.pack(ipadx=10, ipady=10)
         commentLabel = Label(frame, text="Comment: ")
@@ -927,7 +946,7 @@ def counter():
         #Button.place(x=25, y=100)
         nameLabel = Label(frame, text= USERNAME).place(x=520, y=4)
 
-        step = step + 1
+        
     creategrid(step)
 
 def loadingUI():
@@ -939,7 +958,7 @@ def loadingUI():
     global append_boxes
     append_boxes =[]
     delete_boxes =[]
-    global f1, f2, f3,f4,f5,f6
+    global f1, f2, f3,f4,f5,f6, frameTodo
     loadws.title('On/Off load Page. Manifest: '+ tail)
     loadws.geometry('1450x1100')
     loadws.config(bg='#F2B33D')
@@ -948,11 +967,13 @@ def loadingUI():
     f6 = Frame(loadws) 
 
     f5 = Frame (loadws)
+    frameTodo =Frame (loadws)
     
     f6.pack(side=BOTTOM, fill=BOTH, expand=True, padx=10, pady=10)
     
     f3.pack(side=LEFT, fill=Y, padx=10, pady=10)
     f5.pack(side=TOP, fill=X, padx=10, pady=10)
+    frameTodo.pack(side=RIGHT,fill=BOTH, padx=10, pady=10)
     #f2.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
     #f4.pack(side=BOTTOM, fill=BOTH, padx=10, pady=10)
    
@@ -962,7 +983,8 @@ def loadingUI():
     #Button(f2, text="F3Button", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
 
     r= step #starting state index
-    global arrName, arrWeight, arrX, arrY
+    global arrName, arrWeight, arrX, arrY 
+    #arrName, arrWeight, arrX, arrY =getGrid(r)
     arrName = []
     arrWeight = []
     arrX = []
@@ -982,11 +1004,12 @@ def loadingUI():
         arrWeight.append(col2)
         arrX.append(col3)
         arrY.append(col4)
+    #creategrid(0)
     # print(arrName)
     createBuffer(f6)
     global arr
     arr=arrName, arrWeight, arrX, arrY
-    #tip = Balloon(loadws)
+    tip = Balloon(loadws)
     #tip = Balloon(tkWindow)
     for i in range(10):
         for j in range(12):
@@ -997,16 +1020,16 @@ def loadingUI():
             if (n == 'NAN'):
                 b = Button(f3, text=n, height=3, width=6, bg='black', fg='white')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
-            #   tip.bind_widget(b, balloonmsg="weight: "+str(w)+"\nlocation: ["+str(x)+","+str(y)+"]")
+                tip.bind_widget(b, balloonmsg="weight: "+str(w)+"\nlocation: ["+str(x)+","+str(y)+"]"+ "\nName: " + n)
             elif (n == 'UNUSED'):
                 b = Button(f3, text=n, height=3, width=6, bg='white', fg='black')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
-            #    tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+                tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]"+ "\nName: " + n)
             else:
                 offloadfuncs = partial(offloadfunc, arr[2][i][j], arr[3][i][j]) 
                 b = Button(f3, text=n, height=3, width=6, bg='blue', fg='white', command = offloadfuncs)
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
-            #    tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
+                tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]"+ "\nName: " + n)
     # for i in range(10):
     
     #     for j in range(12):
@@ -1036,6 +1059,10 @@ def do_stuff(): # call offload, onload, confirm buttons.
     global nameEntry
     global weightEntry
     global USERNAME
+    global gRow
+    global isOnload
+
+
     
     
     WeightLabel = Label(f5, text="Weight: ").grid(row=4, column=0)
@@ -1062,6 +1089,15 @@ def do_stuff(): # call offload, onload, confirm buttons.
 
     
     estimate_label = Label(f5, text="Estimation Time: " + str(estimatedTime) + " minutes")
+    emptyLabel = Label(frameTodo, text= "                                                                                                                                                                                                      ").grid(row=1, column=1)
+
+    if not isOnload:
+        boxlist = Label(frameTodo, text='Offload: ['+ str(delete_boxes[len(delete_boxes)-1][1])+','+ str(delete_boxes[len(delete_boxes)-1][2])+']', font=("Arial", 16)).grid(row=gRow, column=1 )
+        gRow+=1
+    else:
+        boxlist = Label(frameTodo, text='Onload: ['+ str(append_boxes[len(append_boxes)-1][1])+','+ str(append_boxes[len(append_boxes)-1][2])+']', font=("Arial", 16)).grid(row=gRow, column=1)
+        gRow+=1
+        isOnload = False
     
    # clear_button = Button(f2,  text ='clear')
    # clear_button.place(relx=0.7, rely=0.1, anchor=CENTER, command=clearfunc)
@@ -1095,12 +1131,16 @@ def offloadfunc(xcoor, ycoor):
     do_stuff()
 
 def onloadfunc(weight, name):
-
-    print("name entered :", name.get())
-    print("weight entered: ", weight.get())
-    append_boxes.append([2,weight.get(),name.get()])
-    print (append_boxes)
-    do_stuff()
+    global isOnload 
+    
+    if name.get() !='':
+        isOnload = True
+        print("name entered :", name.get())
+        print("weight entered: ", weight.get())
+        append_boxes.append([2,weight.get(),name.get()])
+        print (append_boxes)
+        
+        do_stuff()
 def confirmfunc():
     #load(append_boxes)
     global loadws
@@ -1142,7 +1182,8 @@ def balancePageUI(title):
     #
     # frame4 = Frame(frame, bd=1, relief='solid')
     # frame4.grid(sticky='nsew', padx=5, pady=5)
-    Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
+    counterNext = partial(counter,1)
+    Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counterNext).pack(ipadx=3, ipady=3)
     estimate_label = Label(frame, text="Estimation Time: " + str(estimatedTime) + " minutes" , font=("Arial", 16))
     estimate_label.pack(ipadx=20, ipady=20)
 
@@ -1226,6 +1267,10 @@ def balanceValidate():
     if len(filename) > 3:
         uploadWindow.destroy()
         decision = 2
+        readManifest()
+        makeGrid() # construct data[][] buffer[][]
+
+        menu()  # display BACKEND main menu, input choice
 
 
 def onloadOffloadValidate():
@@ -1234,6 +1279,10 @@ def onloadOffloadValidate():
     if len(filename) > 3:
         uploadWindow.destroy()
         decision = 1
+        readManifest()
+        makeGrid() # construct data[][] buffer[][]
+
+        menu()  # display BACKEND main menu, input choice
 
 def UploadPage():
     global uploadWindow
@@ -1370,6 +1419,8 @@ if __name__ == '__main__':
     crane_y = 0
     filename = ""
     decision = 0 # 1 = load/offload, 2 = balance
+    gRow = 2
+    isOnload = False
     logIn()
     if islogin:
         UploadPage()
@@ -1378,14 +1429,14 @@ if __name__ == '__main__':
  
 
 
-    head, tail = os.path.split(filename)
-    readManifest()
-    makeGrid() # construct data[][] buffer[][]
+    #head, tail = os.path.split(filename)
+    # readManifest()
+    # makeGrid() # construct data[][] buffer[][]
 
-    menu()  # display BACKEND main menu, input choice
+    # menu()  # display BACKEND main menu, input choice
     print('moving sequence:\n')
     print(mysequence)
     print(f'estimated time: {estimatedTime}')
     print_ship2(data)
 
-    writeManifest() # finish cycle, write OUTBOUND manifest
+    
