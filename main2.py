@@ -40,7 +40,6 @@ def offload(box, isOnPort):  # move current box
     global crane_x
     global crane_y
     global estimatedTime
-    #print('unload all needed containers first')
 
     if box.target == True:  # is my target, unload to pink
         nameLogBox = box.name
@@ -50,10 +49,10 @@ def offload(box, isOnPort):  # move current box
         state = copy.deepcopy(data)
         states.append(state)
         mysequence.append(f'Offload: [{box.rowNum + 1},{box.colNum + 1}] to [9,1](pink)')
-        writeLog(f'"{nameLogBox}" is offloaded')
+        #writeLog(f'"{nameLogBox}" is offloaded')
+        logData.append(f'"{nameLogBox}" is offloaded')
 
         tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum, 8, 0)
-        # print('ttttttttttttttttttttttt')
         print(getdistance(crane_x, crane_y, box.rowNum, box.colNum))
         if isOnPort:
             tempTime += 2
@@ -70,7 +69,8 @@ def offload(box, isOnPort):  # move current box
         state = copy.deepcopy(data)
         states.append(state)
         mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-        writeLog(f'"{nameLogBox}" is moved to ship: [{row},{col}]')
+        #writeLog(f'"{nameLogBox}" is moved to ship: [{row},{col}]')
+        logData.append(f'"{nameLogBox}" is moved to ship: [{row},{col}]')
         tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum, row, col)
         if isOnPort:
             tempTime += 2
@@ -93,7 +93,6 @@ def load(todo_on, isOnPort):  # 2
     weight = todo_on[0][1]
     name = todo_on[0][2]
     todo_on.pop(0)
-    # print(f"todo weight:{weight} name:{name}")
     tempgrid = data[:-2]
     row, col, dist = nearspot(8, -1, tempgrid)  # virtual pink top left
 
@@ -102,8 +101,8 @@ def load(todo_on, isOnPort):  # 2
     state = copy.deepcopy(data)
     states.append(state)
     mysequence.append(f'Onload: {name} to [{row + 1},{col + 1}]')
-    writeLog(f'"{name}" is onloaded to ship: [{row},{col}]')
-
+    #writeLog(f'"{name}" is onloaded to ship: [{row},{col}]')
+    logData.append(f'"{name}" is onloaded to ship: [{row},{col}]')
     tempTime = getdistance(crane_x, crane_y, 8, 0) + getdistance(8, 0, row, col)
     if isOnPort:
         tempTime += 2
@@ -111,7 +110,6 @@ def load(todo_on, isOnPort):  # 2
     estimatedTimeEach.append(tempTime)
     crane_x = row
     crane_y = col
-    # print('===========ship==================')
     print_ship2(data)
     if checkBot(row, col):
         return True, data[row][col]
@@ -239,7 +237,8 @@ def SIFT():
                 estimatedTime += tempTime
                 estimatedTimeEach.append(tempTime)
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}] ')
-                writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                #writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                logData.append(f'"{nameLogBox}" is moved to [{row},{col}]')
                 crane_x = row
                 crane_y = col
                 
@@ -254,7 +253,8 @@ def SIFT():
                 estimatedTime += tempTime
                 estimatedTimeEach.append(tempTime)
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}] ')
-                writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                #writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                logData.append(f'"{nameLogBox}" is moved to [{row},{col}]')
                 crane_x = row
                 crane_y = col
                 
@@ -302,8 +302,8 @@ def removeFromGoal(box,allBox):
                 estimatedTime += tempTime
                 estimatedTimeEach.append(tempTime)
                 mysequence.append(f'Move: [{eachBox.rowNum + 1},{eachBox.colNum + 1}] to [{row + 1},{col + 1}] ')
-                writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
-                
+                #writeLog(f'"{nameLogBox}" is moved to [{row},{col}]')
+                logData.append(f'"{nameLogBox}" is moved to [{row},{col}]')
                 crane_x = row
                 crane_y = col
 
@@ -492,8 +492,8 @@ def BalanceBoxes(arr):
                 print(f'right to right: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                writeLog(f'"{box.name}" is moved to [{row},{col}]')
-
+                #writeLog(f'"{box.name}" is moved to [{row},{col}]')
+                logData.append(f'"{box.name}" is moved to [{row},{col}]')
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -515,8 +515,8 @@ def BalanceBoxes(arr):
                 print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col} dist:{dist}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                writeLog(f'"{box.name}" is moved to [{row},{col}]')
-
+                #writeLog(f'"{box.name}" is moved to [{row},{col}]')
+                logData.append(f'"{box.name}" is moved to [{row},{col}]')
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -538,7 +538,8 @@ def BalanceBoxes(arr):
                 print(f'left to right: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col} dist:{dist}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                writeLog(f'"{box.name}" is moved to [{row},{col}]')
+                #writeLog(f'"{box.name}" is moved to [{row},{col}]')
+                logData.append(f'"{box.name}" is moved to [{row},{col}]')
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -558,7 +559,8 @@ def BalanceBoxes(arr):
                 print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col}')
                 mysequence.append(f'Move: [{box.rowNum + 1},{box.colNum + 1}] to [{row + 1},{col + 1}]')
-                writeLog(f'"{box.name}" is moved to [{row},{col}]')
+                #writeLog(f'"{box.name}" is moved to [{row},{col}]')
+                logData.append(f'"{box.name}" is moved to [{row},{col}]')
                 tempTime = getdistance(crane_x, crane_y, box.rowNum, box.colNum) + getdistance(box.rowNum, box.colNum,
                                                                                                row, col)
                 estimatedTime += tempTime
@@ -868,18 +870,23 @@ def anotherManifest():
     global frame
     global ws
     ws.destroy()
-    global filename
-    global data
-    global ship
-    global mysequence
-    global states
+    global filename 
+    global data,buffer, todo, logData,ship ,mysequence ,states
     global step
+    global gRow
+    global isOnload
+    
+    gRow = 2
+    isOnload = False
     step = 0
     filename=''
     data.clear()
     ship.clear()
     mysequence.clear()
     states.clear()
+    buffer.clear()
+    todo.clear()
+    logData.clear()
     UploadPage()
 
 def counter(direction):
@@ -916,10 +923,12 @@ def counter(direction):
         
         if direction == 1 : #next
             seq = mysequence[step]
+            writeLog(logData[step-1])
             estimatedTime -= estimatedTimeEach[step]
             step = step + 1
         elif direction == 0 and step > 0:
             seq = mysequence[step-1]
+            
             estimatedTime += estimatedTimeEach[step-1]
             step = step - 1
         v.set("Estimation Time: " + str(estimatedTime) + " minutes")
@@ -1095,7 +1104,7 @@ def do_stuff(): # call offload, onload, confirm buttons.
         boxlist = Label(frameTodo, text='Offload: ['+ str(delete_boxes[len(delete_boxes)-1][1])+','+ str(delete_boxes[len(delete_boxes)-1][2])+']', font=("Arial", 16)).grid(row=gRow, column=1 )
         gRow+=1
     else:
-        boxlist = Label(frameTodo, text='Onload: ['+ str(append_boxes[len(append_boxes)-1][1])+','+ str(append_boxes[len(append_boxes)-1][2])+']', font=("Arial", 16)).grid(row=gRow, column=1)
+        boxlist = Label(frameTodo, text='Onload: Weight: '+ str(append_boxes[len(append_boxes)-1][1])+' Name: '+ str(append_boxes[len(append_boxes)-1][2]), font=("Arial", 16)).grid(row=gRow, column=1)
         gRow+=1
         isOnload = False
     
@@ -1110,9 +1119,11 @@ def addComment(commentEntry):
     commentEntry.delete('1.0', END)
     
 
-def quit_load(page,option):
+def quit_load(page,option): # switch user
     global tail
+    global USERNAME
     page.destroy()
+    writeLog(USERNAME+' signed out')
     logIn()
     if option ==1:
         loadingUI()
@@ -1412,6 +1423,7 @@ if __name__ == '__main__':
     todo = []  # load/offload todo list
     mysequence = []  # give instruction to operator to move
     states = [] # each grid to display
+    logData =[]
     step = 0
     estimatedTime = 0
     estimatedTimeEach = []
