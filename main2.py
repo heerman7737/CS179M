@@ -875,12 +875,15 @@ def anotherManifest():
     global step
     global gRow
     global isOnload
-    
+    global estimatedTime
+    global estimatedTimeEach
+    estimatedTime=0
     gRow = 2
     isOnload = False
     step = 0
     filename=''
     data.clear()
+    estimatedTimeEach.clear()
     ship.clear()
     mysequence.clear()
     states.clear()
@@ -1143,8 +1146,9 @@ def offloadfunc(xcoor, ycoor):
 
 def onloadfunc(weight, name):
     global isOnload 
-    
-    if name.get() !='':
+    inName = name.get()
+    inWeight = int(weight.get())
+    if inName !='' and inWeight >= 0 and inWeight < 100000:
         isOnload = True
         print("name entered :", name.get())
         print("weight entered: ", weight.get())
