@@ -820,18 +820,18 @@ def creategrid(r):
             y = arr[3][i][j]
 
             if (n == 'NAN'):
-                b = Button(frame2, text=n, height=3, width=6, bg='black', fg='white')
+                b = Button(frame2, text=n, height=2, width=6, bg='black', fg='white')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
             elif (n == 'UNUSED'):
-                b = Button(frame2, text=n, height=3, width=6, bg='white', fg='black')
+                b = Button(frame2, text=n, height=2, width=6, bg='white', fg='black')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
             else:
                 temp = n[:5]
                 if len(n) > 5:
                     temp += "..."
-                b = Button(frame2, text=temp, height=3, width=6, bg='blue', fg='white')
+                b = Button(frame2, text=temp, height=2, width=6, bg='blue', fg='white')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(
                     y) + "]" + "\nName: " + n)
@@ -842,7 +842,7 @@ def createBuffer(frame):
     tip = Balloon()
     for i in range(4):
         for j in range(24):
-            b = Button(frame, text=n, height=3, width=6, bg='white', fg='black')
+            b = Button(frame, text=n, height=2, width=6, bg='white', fg='black')
             b.grid(row=i, column=j, ipadx=3, ipady=3)
             tip.bind_widget(b, balloonmsg="weight: " + str(0) + "\nlocation: [" + str(i+1) + "," + str(j+1) + "]" + "\nName: " + n)
             # n = arr[0][i][j]
@@ -851,18 +851,18 @@ def createBuffer(frame):
             # y = arr[3][i][j]
 
             # if (n == 'NAN'):
-            #     b = Button(frame3, text=n, height=3, width=6, bg='black', fg='white')
+            #     b = Button(frame3, text=n, height=2, width=6, bg='black', fg='white')
             #     b.grid(row=i, column=j, ipadx=3, ipady=3)
             #     tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
             # elif (n == 'UNUSED'):
-            #     b = Button(frame3, text=n, height=3, width=6, bg='white', fg='black')
+            #     b = Button(frame3, text=n, height=2, width=6, bg='white', fg='black')
             #     b.grid(row=i, column=j, ipadx=3, ipady=3)
             #     tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]")
             # else:
             #     temp = n[:5]
             #     if len(n) > 5:
             #         temp += "..."
-            #     b = Button(frame3, text=temp, height=3, width=6, bg='blue', fg='white')
+            #     b = Button(frame3, text=temp, height=2, width=6, bg='blue', fg='white')
             #     b.grid(row=i, column=j, ipadx=3, ipady=3)
             #     tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(
             #         y) + "]" + "\nName: " + n)
@@ -905,10 +905,10 @@ def counter(direction):
     frame = Frame(ws)
     frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, pady=10)
     counterNext  = partial(counter, 1)
-    b1 = Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counterNext)
+    b1 = Button(frame, text="Next", height=2, width=6, bg='white', fg='black', command=counterNext)
     b1.pack(ipadx=3, ipady=3)
     counterBack  = partial(counter, 0)
-    b2 = Button(frame, text="Back", height=3, width=6, bg='white', fg='black', command=counterBack)
+    b2 = Button(frame, text="Back", height=2, width=6, bg='white', fg='black', command=counterBack)
     b2.pack(ipadx=4, ipady=4)
     b2.place(x = 250,y = 1)
 
@@ -972,7 +972,7 @@ def loadingUI():
     delete_boxes =[]
     global f1, f2, f3,f4,f5,f6, frameTodo
     loadws.title('On/Off load Page. Manifest: '+ tail)
-    loadws.geometry('1450x1100')
+    loadws.geometry('1450x800')
     loadws.config(bg='#F2B33D')
     f2 = Frame(loadws)
     f3 = Frame(loadws) 
@@ -990,9 +990,9 @@ def loadingUI():
     #f4.pack(side=BOTTOM, fill=BOTH, padx=10, pady=10)
    
     
-    #Button(f2, text="Name: ", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
-    #Button(f2, text="Weight", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
-    #Button(f2, text="F3Button", height=3, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
+    #Button(f2, text="Name: ", height=2, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
+    #Button(f2, text="Weight", height=2, width=6, bg='white', fg='black', command=counter).pack(ipadx=2, ipady=3)
+    #Button(f2, text="F3Button", height=2, width=6, bg='white', fg='black', command=counter).pack(ipadx=3, ipady=3)
 
     r= step #starting state index
     global arrName, arrWeight, arrX, arrY 
@@ -1030,16 +1030,16 @@ def loadingUI():
             x = arr[2][i][j]
             y = arr[3][i][j]
             if (n == 'NAN'):
-                b = Button(f3, text=n, height=3, width=6, bg='black', fg='white')
+                b = Button(f3, text=n, height=2, width=6, bg='black', fg='white')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: "+str(w)+"\nlocation: ["+str(x)+","+str(y)+"]"+ "\nName: " + n)
             elif (n == 'UNUSED'):
-                b = Button(f3, text=n, height=3, width=6, bg='white', fg='black')
+                b = Button(f3, text=n, height=2, width=6, bg='white', fg='black')
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]"+ "\nName: " + n)
             else:
                 offloadfuncs = partial(offloadfunc, arr[2][i][j], arr[3][i][j]) 
-                b = Button(f3, text=n, height=3, width=6, bg='blue', fg='white', command = offloadfuncs)
+                b = Button(f3, text=n, height=2, width=6, bg='blue', fg='white', command = offloadfuncs)
                 b.grid(row=i, column=j, ipadx=3, ipady=3)
                 tip.bind_widget(b, balloonmsg="weight: " + str(w) + "\nlocation: [" + str(x) + "," + str(y) + "]"+ "\nName: " + n)
     # for i in range(10):
@@ -1171,7 +1171,7 @@ def balancePageUI(title):
     global frame, frame1, frame2, frame3, estimatedTime
     global USERNAME
     ws.title(title)
-    ws.geometry('1450x1100')
+    ws.geometry('1450x800')
     ws.config(bg='#F2B33D')
     frame3 = Frame(ws)
     frame1 = Frame(ws)
@@ -1198,7 +1198,7 @@ def balancePageUI(title):
     # frame4 = Frame(frame, bd=1, relief='solid')
     # frame4.grid(sticky='nsew', padx=5, pady=5)
     counterNext = partial(counter,1)
-    Button(frame, text="Next", height=3, width=6, bg='white', fg='black', command=counterNext).pack(ipadx=3, ipady=3)
+    Button(frame, text="Next", height=2, width=6, bg='white', fg='black', command=counterNext).pack(ipadx=3, ipady=3)
     estimate_label = Label(frame, text="Estimation Time: " + str(estimatedTime) + " minutes" , font=("Arial", 16))
     estimate_label.pack(ipadx=20, ipady=20)
 
