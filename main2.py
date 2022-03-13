@@ -110,7 +110,7 @@ def load(todo_on, isOnPort):  # 2
     estimatedTimeEach.append(tempTime)
     crane_x = row
     crane_y = col
-    print_ship2(data)
+    ##print_ship2(data)
     if checkBot(row, col):
         return True, data[row][col]
     return False, data[row][col]
@@ -261,7 +261,7 @@ def SIFT():
         
         
 
-        print_ship2(data)
+        #print_ship2(data)
         
         
         allBox.pop(0)
@@ -486,7 +486,7 @@ def BalanceBoxes(arr):
             if box.colNum > MID_LINE:  # it's on right
                 tempGrid = [row[MID_LINE + 1:] for row in data]  # index 0-5
                 tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
+                #print_ship2(tempGrid)
                 row, col, dist = nearspot(box.rowNum, box.colNum - (MID_LINE + 1), tempGrid)
                 col += MID_LINE + 1  # offset for sliced grid
                 print(f'right to right: {box.name} coord: {box.rowNum} , {box.colNum}')
@@ -504,13 +504,13 @@ def BalanceBoxes(arr):
                 swapData(box.rowNum, box.colNum, row, col, data)
                 state = copy.deepcopy(data)
                 states.append(state)
-                print_ship2(data)
+                #print_ship2(data)
 
 
             else:  # its on left
                 tempGrid = [row[:MID_LINE + 1] for row in data]
                 tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
+                #print_ship2(tempGrid)
                 row, col, dist = nearspot(box.rowNum, box.colNum, tempGrid)
                 print(f'left to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col} dist:{dist}')
@@ -526,12 +526,12 @@ def BalanceBoxes(arr):
                 swapData(box.rowNum, box.colNum, row, col, data)
                 state = copy.deepcopy(data)
                 states.append(state)
-                print_ship2(data)
+                #print_ship2(data)
         else:  # is target box
             if box.colNum <= MID_LINE:  # it's on left
                 tempGrid = [row[MID_LINE + 1:] for row in data]  # index for right
                 tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
+                #print_ship2(tempGrid)
                 row, col, dist = nearspot(box.rowNum, box.colNum - (MID_LINE + 1), tempGrid)
                 col += MID_LINE + 1  # offset for sliced grid
                 # mysequence.append("balance: ")
@@ -549,12 +549,12 @@ def BalanceBoxes(arr):
                 swapData(box.rowNum, box.colNum, row, col, data)
                 state = copy.deepcopy(data)
                 states.append(state)
-                print_ship2(data)
+                ##print_ship2(data)
 
             else:  # its on right
                 tempGrid = [row[:MID_LINE + 1] for row in data]
                 tempGrid = tempGrid[:-2]
-                print_ship2(tempGrid)
+                ##print_ship2(tempGrid)
                 row, col, dist = nearspot(box.rowNum, box.colNum, tempGrid)
                 print(f'right to left: {box.name} coord: {box.rowNum} , {box.colNum}')
                 print(f'near: {row} , {col}')
@@ -570,7 +570,7 @@ def BalanceBoxes(arr):
                 swapData(box.rowNum, box.colNum, row, col, data)
                 state = copy.deepcopy(data)
                 states.append(state)
-                print_ship2(data)
+                ##print_ship2(data)
 
         needMove.remove(box)
 
@@ -1440,19 +1440,8 @@ if __name__ == '__main__':
     logIn()
     if islogin:
         UploadPage()
-    else:
-        exit(1)
  
 
 
-    #head, tail = os.path.split(filename)
-    # readManifest()
-    # makeGrid() # construct data[][] buffer[][]
-
-    # menu()  # display BACKEND main menu, input choice
-    print('moving sequence:\n')
-    print(mysequence)
-    print(f'estimated time: {estimatedTime}')
-    print_ship2(data)
 
     
