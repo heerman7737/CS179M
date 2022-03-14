@@ -13,3 +13,6 @@
 3. Double click to execute `CS179 Project.exe` 
 
 If Windows firewall warning appears, please click allow to run or add the program path to the Windows firewall white list.
+
+## Video Instructions:
+https://www.youtube.com/watch?v=MzW57QPBJyY
