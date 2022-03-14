@@ -23,3 +23,6 @@ https://docs.google.com/presentation/d/18cMBDz5I7XN4XFsz3A8wQcOFbc5cnHkrFq-cbjIW
 ## Testing List:
 https://drive.google.com/file/d/1zEGFeUtnGM5FkQrBezLPN8YG8s-40wez/view?usp=sharing
 
+## Training Video (Link to YouTube)
+https://youtu.be/O2tEdu5Nh_Y
+
