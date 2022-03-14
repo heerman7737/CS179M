@@ -17,6 +17,9 @@ If Windows firewall warning appears, please click allow to run or add the progra
 ## Video Instructions:
 https://www.youtube.com/watch?v=MzW57QPBJyY
 
-# Pitch Slides:
+## Pitch Slides:
 https://docs.google.com/presentation/d/18cMBDz5I7XN4XFsz3A8wQcOFbc5cnHkrFq-cbjIW2O4/edit?usp=sharing
+
+## Testing List:
+https://drive.google.com/file/d/1zEGFeUtnGM5FkQrBezLPN8YG8s-40wez/view?usp=sharing
 
